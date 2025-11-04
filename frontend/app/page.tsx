@@ -1,12 +1,11 @@
-import Image from "next/image";
+import { TopNav } from "@/components/TopNav";
 import Link from "next/link";
 
 export default function Home() {
   return (
-        <div className="min-h-screen bg-background">
-          {/** 
+    <div className="min-h-screen bg-background">
       <TopNav />
-       */}
+
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
