@@ -1,4 +1,6 @@
 import { TopNav } from "@/components/TopNav";
+import { mockMeets } from "@/data/mockData";
+import { MeetCard } from "@/components/MeetCard";
 import Link from "next/link";
 
 export default function Home() {
@@ -17,11 +19,9 @@ export default function Home() {
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {/**
           {mockMeets.map((meet) => (
             <MeetCard key={meet.id} meet={meet} />
           ))}
-            */}
         </div>
       </main>
     </div>
