@@ -1,26 +1,99 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Core colors */
+    --background: 220 15% 97%;
+    --foreground: 215 25% 17%;
+
+    /* Surfaces */
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 17%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 17%;
+
+    /* Brand colors */
+    --primary: 166 48% 33%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 166 45% 55%;
+    --secondary-foreground: 0 0% 100%;
+    --accent: 166 45% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Semantic colors */
+    --muted: 220 15% 95%;
+    --muted-foreground: 215 15% 45%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders, inputs, rings */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 166 48% 33%;
+
+    /* Radii */
+    --radius: 0.5rem;
+
+    /* Sport palette */
+    --sport-mint: 166 45% 55%;
+    --sport-mint-dark: 166 48% 33%;
+    --sport-neutral: 220 15% 97%;
+    --sport-text: 215 25% 17%;
+    --sport-ongoing: 43 96% 56%;
+    --sport-official: 142 71% 45%;
+
+    /* Fonts */
+    --font-sans: var(--font-geist-sans, Arial, Helvetica, sans-serif);
+    --font-mono: var(--font-geist-mono, monospace);
+  }
+
+  /* ---------- DARK THEME ---------- */
+  .dark {
+    --background: 215 30% 12%;
+    --foreground: 220 15% 97%;
+
+    --card: 215 28% 15%;
+    --card-foreground: 220 15% 97%;
+    --popover: 215 28% 15%;
+    --popover-foreground: 220 15% 97%;
+
+    --primary: 166 45% 55%;
+    --primary-foreground: 215 30% 12%;
+    --secondary: 166 48% 33%;
+    --secondary-foreground: 220 15% 97%;
+    --accent: 166 45% 55%;
+    --accent-foreground: 215 30% 12%;
+
+    --muted: 215 25% 20%;
+    --muted-foreground: 220 10% 65%;
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 220 15% 97%;
+
+    --border: 215 25% 25%;
+    --input: 215 25% 25%;
+    --ring: 166 45% 55%;
+
+    --sport-mint: 166 45% 55%;
+    --sport-mint-dark: 166 48% 33%;
+    --sport-neutral: 215 30% 12%;
+    --sport-text: 220 15% 97%;
+    --sport-ongoing: 43 96% 56%;
+    --sport-official: 142 71% 45%;
+  }
+
+  /* Apply base styles */
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans, system-ui, sans-serif);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ---------- SYSTEM PREFERENCE (optional) ---------- */
+/* Enables automatic dark mode if you prefer that over a .dark class toggle */
+@media (prefers-color-scheme: dark) {
+  :root:not(.dark) {
+    --background: 215 30% 12%;
+    --foreground: 220 15% 97%;
+  }
 }
