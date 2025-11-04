@@ -22,10 +22,10 @@ export const TopNav = () => {
   if (!mounted) return null;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-card shadow-sm">
+    <header className="sticky top-0 z-50 w-full border-b bg-card shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
-        <Link href="/meets" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-xl">
             LT
           </div>
@@ -41,7 +41,7 @@ export const TopNav = () => {
             <Input
               type="search"
               placeholder="Sök evenemang eller simmare..."
-              className="w-full pl-10 border-border"
+              className="w-full pl-10"
               aria-label="Sök evenemang eller simmare"
             />
           </div>
