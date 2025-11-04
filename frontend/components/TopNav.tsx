@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { Search, Globe, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export const TopNav = () => {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-card shadow-sm">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-card shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link href="/meets" className="flex items-center gap-2">
@@ -35,7 +41,7 @@ export const TopNav = () => {
             <Input
               type="search"
               placeholder="Sök evenemang eller simmare..."
-              className="w-full pl-10"
+              className="w-full pl-10 border-border"
               aria-label="Sök evenemang eller simmare"
             />
           </div>
@@ -44,7 +50,12 @@ export const TopNav = () => {
         {/* Actions */}
         <div className="flex items-center gap-2">
           {/* Mobile Search */}
-          <Button variant="ghost" size="icon" className="md:hidden" aria-label="Sök">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            aria-label="Sök"
+          >
             <Search className="h-5 w-5" />
           </Button>
 
@@ -65,11 +76,16 @@ export const TopNav = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             aria-label="Växla tema"
+            onClick={() =>
+              setTheme(resolvedTheme === "dark" ? "light" : "dark")
+            }
           >
-            <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            {resolvedTheme === "dark" ? (
+              <Moon className="h-5 w-5 transition-transform duration-300" />
+            ) : (
+              <Sun className="h-5 w-5 transition-transform duration-300" />
+            )}
           </Button>
         </div>
       </div>
