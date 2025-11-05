@@ -66,7 +66,7 @@ export const TopNav = () => {
                 <Globe className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="bg-background">
               <DropdownMenuItem>Svenska (SV)</DropdownMenuItem>
               <DropdownMenuItem>English (EN)</DropdownMenuItem>
             </DropdownMenuContent>
