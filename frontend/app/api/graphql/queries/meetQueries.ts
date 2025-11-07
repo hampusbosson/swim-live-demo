@@ -12,3 +12,17 @@ export const GET_MEETS = gql`
     }
   }
 `;
+
+
+export const GET_MEET_BY_ID = gql`
+  query GetMeet($id: ID!) {
+    meet(id: $id) {
+      id
+      name
+      location
+      startDate
+      endDate
+      bannerUrl
+    }
+  }
+`;
