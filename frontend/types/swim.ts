@@ -43,6 +43,23 @@ export interface Lane {
   status: "WAITING" | "ONGOING" | "FINISHED" | "OFFICIAL";
 }
 
-export interface getMeetsData {
+export interface GetMeetsData {
     meets: Meet[];
 }
+
+export interface GetMeetsByIdData {
+    meet: Meet;
+}
+
+export interface GetSessionsData {
+    sessions: Session[];
+}
+
+export interface GetEventsData {
+    events: Event[];
+}
+
+export interface GetHeatsData {
+    heats: Heat[];
+}
+
