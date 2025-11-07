@@ -18,7 +18,7 @@ import { GET_HEATS_BY_MEET } from "@/app/api/graphql/queries/heatQueries";
 import {
   GetSessionsData,
   GetEventsData,
-  GetMeetsByIdData,
+  GetMeetByIdData,
   Heat,
   GetHeatsData,
 } from "@/types/swim";
@@ -32,7 +32,7 @@ const MeetDetails = () => {
     data: meetData,
     loading: meetLoading,
     error: meetError,
-  } = useQuery<GetMeetsByIdData>(GET_MEET_BY_ID, {
+  } = useQuery<GetMeetByIdData>(GET_MEET_BY_ID, {
     variables: { id: meetId },
   });
 
@@ -238,7 +238,7 @@ const MeetDetails = () => {
                               {heats.map((heat: Heat) => (
                                 <Link
                                   key={heat.id}
-                                  href={`/heat/${heat.id}`}
+                                  href={`/meet/${meetId}/heat/${heat.id}`}
                                   className="block"
                                 >
                                   <Button
