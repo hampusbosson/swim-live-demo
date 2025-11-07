@@ -1,5 +1,9 @@
-import { Lane } from "@/data/mockData";
+"use client";
+
+import { useQuery } from "@apollo/client/react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Lane, getLanesData } from "@/types/swim";
 import {
   Table,
   TableBody,
@@ -10,27 +14,43 @@ import {
 } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { GET_LANES } from "@/app/api/graphql/queries/laneQueries";
+import { motion } from "framer-motion";
 
 interface HeatTableProps {
-  lanes: Lane[];
+  heatId: string;
   heatNumber?: number;
 }
 
-export const HeatTable = ({ lanes, heatNumber }: HeatTableProps) => {
+export const HeatTable = ({ heatId, heatNumber }: HeatTableProps) => {
+  const { data, loading, error } = useQuery<getLanesData>(GET_LANES, {
+    variables: { heatId },
+    pollInterval: 1500,
+    notifyOnNetworkStatusChange: true,
+  });
+
+  const [lanes, setLanes] = useState<Lane[]>([]);
+
+  useEffect(() => {
+    if (data?.lanes) {
+      const newLanes = data.lanes;
+      setLanes(newLanes);
+    }
+  }, [data, lanes]);
+
+  if (loading && lanes.length === 0)
+    return <p className="text-center text-muted-foreground">Laddar banor...</p>;
+  if (error)
+    return <p className="text-center text-destructive">Fel: {error.message}</p>;
+
+  const sortedLanes = [...lanes].sort((a, b) => a.lane - b.lane);
+
   const getStatusBadge = (status: Lane["status"]) => {
     switch (status) {
       case "OFFICIAL":
-        return (
-          <Badge className="bg-sport-official text-white">
-            Official
-          </Badge>
-        );
+        return <Badge className="bg-sport-official text-white">Official</Badge>;
       case "ONGOING":
-        return (
-          <Badge className="bg-sport-ongoing text-white">
-            Pågående
-          </Badge>
-        );
+        return <Badge className="bg-sport-ongoing text-white">Pågående</Badge>;
       case "FINISHED":
         return <Badge variant="secondary">Klar</Badge>;
       case "WAITING":
@@ -38,15 +58,11 @@ export const HeatTable = ({ lanes, heatNumber }: HeatTableProps) => {
     }
   };
 
-  const sortedLanes = [...lanes].sort((a, b) => a.lane - b.lane);
-
   return (
     <div className="space-y-4">
       {heatNumber && (
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-foreground">
-            Heat {heatNumber}
-          </h2>
+          <h2 className="text-xl font-semibold text-foreground">Heat {heatNumber}</h2>
         </div>
       )}
 
@@ -67,79 +83,32 @@ export const HeatTable = ({ lanes, heatNumber }: HeatTableProps) => {
             </TableHeader>
             <TableBody>
               {sortedLanes.map((lane) => (
-                <TableRow
+                <motion.tr
                   key={lane.id}
+                  layout
+                  transition={{ duration: 0.25 }}
                   className={cn(
                     "transition-colors",
                     lane.status === "ONGOING" && "bg-sport-ongoing/10",
                     lane.status === "OFFICIAL" && "bg-sport-official/5"
                   )}
                 >
-                  <TableCell className="font-bold text-center">
-                    {lane.lane}
-                  </TableCell>
+                  <TableCell className="font-bold text-center">{lane.lane}</TableCell>
                   <TableCell className="font-medium">{lane.swimmer}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {lane.club}
-                  </TableCell>
+                  <TableCell className="text-muted-foreground">{lane.club}</TableCell>
                   <TableCell className="text-center text-muted-foreground">
                     {lane.year}
                   </TableCell>
-                  <TableCell className="text-center font-mono">
-                    {lane.seedTime}
-                  </TableCell>
+                  <TableCell className="text-center font-mono">{lane.seedTime}</TableCell>
                   <TableCell className="text-center font-mono font-semibold">
                     {lane.resultTime || "-"}
                   </TableCell>
                   <TableCell>{getStatusBadge(lane.status)}</TableCell>
-                </TableRow>
+                </motion.tr>
               ))}
             </TableBody>
           </Table>
         </Card>
-      </div>
-
-      {/* Mobile Cards */}
-      <div className="md:hidden space-y-3">
-        {sortedLanes.map((lane) => (
-          <Card
-            key={lane.id}
-            className={cn(
-              "p-4 transition-colors",
-              lane.status === "ONGOING" && "bg-sport-ongoing/10 border-sport-ongoing",
-              lane.status === "OFFICIAL" && "bg-sport-official/5 border-sport-official"
-            )}
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold">
-                  {lane.lane}
-                </div>
-                <div>
-                  <p className="font-semibold text-foreground">{lane.swimmer}</p>
-                  <p className="text-sm text-muted-foreground">{lane.club}</p>
-                </div>
-              </div>
-              {getStatusBadge(lane.status)}
-            </div>
-            <div className="grid grid-cols-3 gap-3 text-sm">
-              <div>
-                <p className="text-muted-foreground text-xs">År</p>
-                <p className="font-medium">{lane.year}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground text-xs">Seed</p>
-                <p className="font-mono font-medium">{lane.seedTime}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground text-xs">Resultat</p>
-                <p className="font-mono font-semibold">
-                  {lane.resultTime || "-"}
-                </p>
-              </div>
-            </div>
-          </Card>
-        ))}
       </div>
     </div>
   );
