@@ -1,15 +1,9 @@
-"use client"
+"use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { TopNav } from "@/components/TopNav";
 import { SessionSidebar } from "@/components/SessionSidebar";
-import {
-  mockMeets,
-  mockSessions,
-  mockEvents,
-  mockHeats,
-} from "@/data/mockData";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,22 +11,96 @@ import { Calendar, Clock, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
+import { GET_MEET_BY_ID } from "@/app/api/graphql/queries/meetQueries";
+import { GET_EVENTS_BY_MEET } from "@/app/api/graphql/queries/eventQueries";
+import { GET_SESSIONS_BY_MEET } from "@/app/api/graphql/queries/sessionQueries";
+import { GET_HEATS_BY_MEET } from "@/app/api/graphql/queries/heatQueries";
+import {
+  GetSessionsData,
+  GetEventsData,
+  GetMeetsByIdData,
+  Heat,
+  GetHeatsData,
+} from "@/types/swim";
+import { useQuery } from "@apollo/client/react";
 
 const MeetDetails = () => {
   const params = useParams();
   const meetId = params.id as string;
 
-  const meet = mockMeets.find((m) => m.id === meetId);
-  const sessions = mockSessions.filter((s) => s.meetId === meetId);
+  const {
+    data: meetData,
+    loading: meetLoading,
+    error: meetError,
+  } = useQuery<GetMeetsByIdData>(GET_MEET_BY_ID, {
+    variables: { id: meetId },
+  });
 
-  const [activeSessionId, setActiveSessionId] = useState(() =>
-    sessions.length > 0 ? sessions[0].id : undefined
+  const {
+    data: sessionData,
+    loading: sessionLoading,
+    error: sessionError,
+  } = useQuery<GetSessionsData>(GET_SESSIONS_BY_MEET, {
+    variables: { meetId },
+  });
+
+  const {
+    data: eventData,
+    loading: eventLoading,
+    error: eventError,
+  } = useQuery<GetEventsData>(GET_EVENTS_BY_MEET, {
+    variables: { meetId },
+  });
+
+  const {
+    data: heatData,
+    loading: heatLoading,
+    error: heatError,
+  } = useQuery<GetHeatsData>(GET_HEATS_BY_MEET, { variables: { meetId } });
+
+  const meet = meetData?.meet;
+  const sessions = useMemo(() => sessionData?.sessions ?? [], [sessionData]);
+  // Memoize events so the reference doesn't change unnecessarily
+  const events = useMemo(() => eventData?.events ?? [], [eventData]);
+  const allHeats = heatData?.heats ?? [];
+
+  const [activeSessionId, setActiveSessionId] = useState<string | undefined>(
+    undefined
   );
 
+  useEffect(() => {
+    if (sessions.length > 0 && !activeSessionId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveSessionId(sessions[0].id);
+    }
+  }, [sessions, activeSessionId]);
+
+  // Filter events for active session
   const eventsForSession = useMemo(
-    () => mockEvents.filter((e) => e.meetId === meetId && e.sessionId === activeSessionId),
-    [meetId, activeSessionId]
+    () =>
+      events.filter(
+        (e) => e.meetId === meetId && e.sessionId === activeSessionId
+      ),
+    [meetId, activeSessionId, events]
   );
+
+  if (meetLoading || sessionLoading || eventLoading || heatLoading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Laddar tävling...</p>
+      </div>
+    );
+
+  if (meetError || sessionError || eventError || heatError)
+    return (
+      <p className="text-destructive">
+        Fel vid hämtning av data:{" "}
+        {meetError?.message ||
+          sessionError?.message ||
+          eventError?.message ||
+          heatError?.message}
+      </p>
+    );
 
   if (!meet) {
     return (
@@ -133,10 +201,9 @@ const MeetDetails = () => {
                 ) : (
                   <div className="space-y-3">
                     {eventsForSession.map((event) => {
-                      const heats = mockHeats.filter(
+                      const heats = allHeats.filter(
                         (h) => h.eventId === event.id
                       );
-
                       return (
                         <Card
                           key={event.id}
@@ -168,7 +235,7 @@ const MeetDetails = () => {
                                 {heats.length} heat
                                 {heats.length !== 1 ? "s" : ""}
                               </p>
-                              {heats.map((heat) => (
+                              {heats.map((heat: Heat) => (
                                 <Link
                                   key={heat.id}
                                   href={`/heat/${heat.id}`}
