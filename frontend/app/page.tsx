@@ -7,11 +7,11 @@ import { TopNav } from "@/components/TopNav";
 import { MeetCard } from "@/components/MeetCard";
 import { Meet } from "@/types/swim";
 import { GET_MEETS } from "./api/graphql/queries/meetQueries";
-import { getMeetsData } from "@/types/swim";
+import { GetMeetsData } from "@/types/swim";
 
 
 const Home = () => {
-  const { data, loading, error } = useQuery<getMeetsData>(GET_MEETS);
+  const { data, loading, error } = useQuery<GetMeetsData>(GET_MEETS);
 
   if (loading)
     return (
