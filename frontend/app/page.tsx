@@ -1,9 +1,36 @@
-import { TopNav } from "@/components/TopNav";
-import { mockMeets } from "@/data/mockData";
-import { MeetCard } from "@/components/MeetCard";
-import Link from "next/link";
+"use client";
 
-export default function Home() {
+import {
+  useQuery,
+} from "@apollo/client/react";
+import { TopNav } from "@/components/TopNav";
+import { MeetCard } from "@/components/MeetCard";
+import { Meet } from "@/types/swim";
+import { GET_MEETS } from "./api/graphql/queries/meetQueries";
+import { getMeetsData } from "@/types/swim";
+
+
+const Home = () => {
+  const { data, loading, error } = useQuery<getMeetsData>(GET_MEETS);
+
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Laddar tävlingar...</p>
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-destructive">
+          Fel vid hämtning av tävlingar: {error.message}
+        </p>
+      </div>
+    );
+
+  const meets = data?.meets ?? [];
+
   return (
     <div className="min-h-screen bg-background">
       <TopNav />
@@ -18,12 +45,19 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {mockMeets.map((meet) => (
-            <MeetCard key={meet.id} meet={meet} />
-          ))}
-        </div>
+        {meets.length === 0 ? (
+          <p className="text-muted-foreground">Inga tävlingar hittades.</p>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {meets.map((meet: Meet) => (
+              <MeetCard key={meet.id} meet={meet} />
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );
 }
+
+export default Home;
+
