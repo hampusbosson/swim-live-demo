@@ -5,12 +5,8 @@ import {
   mockEvents,
   mockHeats,
   mockLanes,
-  type Meet,
-  type Session,
-  type Event,
-  type Heat,
-  type Lane,
 } from "@/data/mockData";
+import { Meet, Session, Event, Heat, Lane } from "@/types/swim";
 
 // ---- In-memory DB (mockad data hämtad från din mockData-fil) ----
 const db = {
@@ -106,7 +102,7 @@ const resolvers = {
   },
 
   Mutation: {
-    startHeat: (_: any, { heatId }: { heatId: string }) => {
+    startHeat: (_: Heat, { heatId }: { heatId: string }) => {
       if (simulators.has(heatId)) return true; // redan igång
 
       // Nollställ heat
@@ -150,7 +146,7 @@ const resolvers = {
       return true;
     },
 
-    resetHeat: (_: any, { heatId }: { heatId: string }) => {
+    resetHeat: (_: Heat, { heatId }: { heatId: string }) => {
       const t = simulators.get(heatId);
       if (t) {
         clearInterval(t);
