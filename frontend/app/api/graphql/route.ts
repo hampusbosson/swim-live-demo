@@ -73,6 +73,7 @@ const typeDefs = /* GraphQL */ `
     sessions(meetId: ID!): [Session!]!
     events(meetId: ID!): [Event!]!
     event(id: ID!): Event
+    eventByHeat(heatId: ID!): Event
     heats(eventId: ID, meetId: ID): [Heat!]!
     heat(id: ID!): Heat
     lanes(heatId: ID!): [Lane!]!
@@ -96,6 +97,11 @@ const resolvers = {
       db.events.filter((e) => e.meetId === meetId),
     event: (_: unknown, { id }: { id: string }) =>
       db.events.find((e) => e.id === id),
+    eventByHeat: (_: unknown, { heatId }: { heatId: string }) => {
+      const heat = db.heats.find((h) => h.id === heatId);
+      if (!heat) return null;
+      return db.events.find((e) => e.id === heat.eventId);
+    },
     heats: (
       _: unknown,
       { eventId, meetId }: { eventId?: string; meetId?: string }
