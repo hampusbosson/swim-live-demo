@@ -8,7 +8,7 @@ import {
 } from "@/data/mockData";
 import { Meet, Session, Event, Heat, Lane } from "@/types/swim";
 
-// ---- In-memory DB (mockad data hämtad från din mockData-fil) ----
+// ---- In-memory DB (mockad data hämtad från mockData-fil) ----
 const db = {
   meets: mockMeets,
   sessions: mockSessions,
@@ -73,7 +73,7 @@ const typeDefs = /* GraphQL */ `
     sessions(meetId: ID!): [Session!]!
     events(meetId: ID!): [Event!]!
     event(id: ID!): Event
-    heats(eventId: ID!): [Heat!]!
+    heats(eventId: ID, meetId: ID): [Heat!]!
     heat(id: ID!): Heat
     lanes(heatId: ID!): [Lane!]!
   }
@@ -88,16 +88,32 @@ const typeDefs = /* GraphQL */ `
 const resolvers = {
   Query: {
     meets: (): Meet[] => db.meets,
-    meet: (_: Meet, { id }: { id: string }) => db.meets.find((m) => m.id === id),
-    sessions: (_: Session[], { meetId }: { meetId: string }) =>
+    meet: (_: unknown, { id }: { id: string }) =>
+      db.meets.find((m) => m.id === id),
+    sessions: (_: unknown, { meetId }: { meetId: string }) =>
       db.sessions.filter((s) => s.meetId === meetId),
-    events: (_: Event[], { meetId }: { meetId: string }) =>
+    events: (_: unknown, { meetId }: { meetId: string }) =>
       db.events.filter((e) => e.meetId === meetId),
-    event: (_: Event, { id }: { id: string }) => db.events.find((e) => e.id === id),
-    heats: (_: Event[], { eventId }: { eventId: string }) =>
-      db.heats.filter((h) => h.eventId === eventId),
-    heat: (_: Heat, { id }: { id: string }) => db.heats.find((h) => h.id === id),
-    lanes: (_: Lane[], { heatId }: { heatId: string }) =>
+    event: (_: unknown, { id }: { id: string }) =>
+      db.events.find((e) => e.id === id),
+    heats: (
+      _: unknown,
+      { eventId, meetId }: { eventId?: string; meetId?: string }
+    ) => {
+      if (eventId) {
+        return db.heats.filter((h) => h.eventId === eventId);
+      }
+      if (meetId) {
+        const eventIds = db.events
+          .filter((e) => e.meetId === meetId)
+          .map((e) => e.id);
+        return db.heats.filter((h) => eventIds.includes(h.eventId));
+      }
+      return db.heats;
+    },
+    heat: (_: unknown, { id }: { id: string }) =>
+      db.heats.find((h) => h.id === id),
+    lanes: (_: unknown, { heatId }: { heatId: string }) =>
       db.lanes.filter((l) => l.heatId === heatId),
   },
 
