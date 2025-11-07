@@ -47,7 +47,7 @@ export interface GetMeetsData {
     meets: Meet[];
 }
 
-export interface GetMeetsByIdData {
+export interface GetMeetByIdData {
     meet: Meet;
 }
 
@@ -61,5 +61,13 @@ export interface GetEventsData {
 
 export interface GetHeatsData {
     heats: Heat[];
+}
+
+export interface getLanesData {
+    lanes: Lane[];
+}
+
+export interface getEventByHeatData {
+    eventByHeat: Event;
 }
 
