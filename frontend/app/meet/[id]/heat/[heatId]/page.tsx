@@ -10,13 +10,15 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { GET_EVENT_BY_HEAT } from "@/app/api/graphql/queries/eventQueries";
 import { GET_MEET_BY_ID } from "@/app/api/graphql/queries/meetQueries";
+import { GET_HEAT_BY_ID } from "@/app/api/graphql/queries/heatQueries";
 import {
   START_HEAT,
   RESET_HEAT,
 } from "@/app/api/graphql/mutations/heatMutations";
 import {
-  getEventByHeatData,
+  GetEventByHeatData,
   GetMeetByIdData,
+  GetHeatByIdData,
 } from "@/types/swim";
 import { useState } from "react";
 
@@ -27,7 +29,7 @@ const HeatView = () => {
 
   const [isHeatActive, setIsHeatActive] = useState<boolean>();
 
-  // --- Meet info ---
+  //Meet info
   const {
     data: meetData,
     loading: meetLoading,
@@ -36,16 +38,27 @@ const HeatView = () => {
     variables: { id: meetId },
   });
 
-  // --- Event info (linked to this heat) ---
+  // Event info (linked to this heat)
   const {
     data: eventData,
     loading: eventLoading,
     error: eventError,
-  } = useQuery<getEventByHeatData>(GET_EVENT_BY_HEAT, {
+  } = useQuery<GetEventByHeatData>(GET_EVENT_BY_HEAT, {
     variables: { heatId },
   });
 
-  // --- Mutations for start/reset simulation ---
+  // heat info
+  const {
+    data: heatData,
+    refetch: refetchHeat,
+    loading: heatLoading,
+    error: heatError,
+  } = useQuery<GetHeatByIdData>(GET_HEAT_BY_ID, {
+    variables: { id: heatId },
+    fetchPolicy: "network-only",
+  });
+
+  // Mutations for start/reset simulation
   const [startHeat, { loading: starting }] = useMutation(START_HEAT, {
     variables: { heatId },
   });
@@ -57,26 +70,30 @@ const HeatView = () => {
   const handleStartHeat = async () => {
     setIsHeatActive(true);
     await startHeat();
-  }
+    await refetchHeat();
+    console.log(heatStartTimestamp);
+  };
 
   const handleResetHeat = async () => {
     setIsHeatActive(false);
     await resetHeat();
-  }
+    await refetchHeat(); 
+  };
 
-  // --- Handle loading/errors ---
-  if (meetLoading || eventLoading)
+  //Handle loading/errors
+  if (meetLoading || eventLoading || heatLoading)
     return <p className="text-center text-muted-foreground">Laddar heat...</p>;
 
-  if (meetError || eventError)
+  if (meetError || eventError || heatError)
     return (
       <p className="text-center text-destructive">
-        Fel: {meetError?.message || eventError?.message}
+        Fel: {meetError?.message || eventError?.message || heatError?.message}
       </p>
     );
 
   const meet = meetData?.meet;
-  const event = eventData?.eventByHeat;
+  const event = eventData?.eventByHeat ?? null;
+  const heatStartTimestamp = heatData?.heat?.startTimestamp ?? null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -109,7 +126,12 @@ const HeatView = () => {
         </div>
 
         {/* --- Heat Table (self-polling) --- */}
-        <HeatTable heatId={heatId} heatNumber={1} isHeatActive={isHeatActive}/>
+        <HeatTable
+          heatId={heatId}
+          heatNumber={1}
+          isHeatActive={isHeatActive}
+          startTimestamp={heatStartTimestamp}
+        />
       </main>
     </div>
   );
