@@ -53,6 +53,7 @@ const typeDefs = /* GraphQL */ `
     eventId: ID!
     number: Int!
     startTime: String!
+    startTimestamp: Float
   }
 
   type Lane {
@@ -125,45 +126,62 @@ const resolvers = {
 
   Mutation: {
     startHeat: (_: Heat, { heatId }: { heatId: string }) => {
-      if (simulators.has(heatId)) return true; // redan igång
+      if (simulators.has(heatId)) return true; // already running
 
-      // Nollställ heat
+      const now = Date.now();
+      const heat = db.heats.find((h) => h.id === heatId);
+      if (heat) {
+        heat.startTimestamp = now;
+      }
+
+      // reset all lanes in heat to starting state
       db.lanes
-        .filter((l) => l.heatId === heatId)
-        .forEach((l) => {
-          l.status = "WAITING";
-          l.resultTime = null;
+        .filter((lane) => lane.heatId === heatId)
+        .forEach((lane) => {
+          lane.status = "ONGOING";
+          lane.resultTime = "0.00"; // start all timers from zero
         });
 
-      // Simulera uppdateringar var 1.2 sek
+      // Assign random target finish times based on seed time
+      const targets = new Map<string, number>();
+      db.lanes
+        .filter((lane) => lane.heatId === heatId)
+        .forEach((lane) => {
+          const seedSeconds = parseFloat(lane.seedTime);
+          const variance = (Math.random() - 0.3) * 1.5;   // add natural randomness
+          const target = Math.max(seedSeconds + variance, seedSeconds - 0.5); // prevent unrealistic improvement from seed time (no more than 0.5s improvement)
+          targets.set(lane.id, target);
+        });
+
+        // update interval every 100 ms
       const t = setInterval(() => {
-        const updatable = db.lanes.filter(
-          (l) =>
-            l.heatId === heatId &&
-            (l.status === "WAITING" || l.status === "ONGOING")
+        const activeLanes = db.lanes.filter(
+          (lane) => lane.heatId === heatId && lane.status === "ONGOING"
         );
 
-        if (!updatable.length) {
-          clearInterval(t);
-          simulators.delete(heatId);
-          return;
+        // if all lanes have finished, clear interval and clean up
+        if (!activeLanes.length) {
+            clearInterval(t);
+            simulators.delete(heatId);
+            return;
         }
+        
+        // increment each active lanes current time
+        activeLanes.forEach((lane) => {
+            const current = parseFloat(lane.resultTime ?? "0");
+            const target = targets.get(lane.id) ?? 0;
+            const next = current + 0.1;
 
-        const lane = updatable[Math.floor(Math.random() * updatable.length)];
-        if (lane.status === "WAITING") {
-          lane.status = "ONGOING";
-        } else {
-          const seedSeconds = parseFloat(lane.seedTime);
-          const variance = (Math.random() - 0.3) * 1.5;
-          const resultSeconds = Math.max(
-            seedSeconds + variance,
-            seedSeconds - 0.5
-          );
-          lane.resultTime = resultSeconds.toFixed(2);
-          lane.status = "FINISHED";
-        }
-      }, 1200);
+            if (next >= target) {
+                lane.resultTime = target.toFixed(2);
+                lane.status = "FINISHED"; // mark lane as done
+            } else {
+                lane.resultTime = next.toFixed(2); // update lane progress
+            }
+        });
+      }, 100);
 
+      // store interval reference so we can stop/reset later
       simulators.set(heatId, t);
       return true;
     },
@@ -174,6 +192,13 @@ const resolvers = {
         clearInterval(t);
         simulators.delete(heatId);
       }
+
+      // clear startTimestamo on the heat
+      const heat = db.heats.find((h) => h.id === heatId);
+      if (heat) {
+        heat.startTimestamp = null;
+      }
+
       db.lanes
         .filter((l) => l.heatId === heatId)
         .forEach((l) => {
