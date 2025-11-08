@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery } from "@apollo/client/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Lane, getLanesData } from "@/types/swim";
+import { Lane, GetLanesData } from "@/types/swim";
 import {
   Table,
   TableBody,
@@ -21,37 +21,71 @@ interface HeatTableProps {
   heatId: string;
   heatNumber?: number;
   isHeatActive?: boolean;
+  startTimestamp?: number | null;
 }
 
 export const HeatTable = ({
   heatId,
   heatNumber,
   isHeatActive,
+  startTimestamp,
 }: HeatTableProps) => {
   const { data, loading, error, startPolling, stopPolling, refetch } =
-    useQuery<getLanesData>(GET_LANES, {
+    useQuery<GetLanesData>(GET_LANES, {
       variables: { heatId },
-      pollInterval: isHeatActive ? 300 : 0, // conditional polling
+      pollInterval: isHeatActive ? 1200 : 0,
       notifyOnNetworkStatusChange: true,
     });
 
   const [lanes, setLanes] = useState<Lane[]>([]);
+  const [elapsed, setElapsed] = useState<number>(0);
+  const rafRef = useRef<number | null>(null);
 
+  // sync lanes
+  useEffect(() => {
+    if (data?.lanes) setLanes(data.lanes);
+  }, [data]);
+
+  // control polling
   useEffect(() => {
     if (isHeatActive) {
-      refetch().then(() => startPolling(300));
+      refetch().then(() => startPolling(1200));
     } else {
       stopPolling();
       refetch();
     }
   }, [isHeatActive, startPolling, stopPolling, refetch]);
 
+  // stopwatch
   useEffect(() => {
-    if (data?.lanes) {
-      const newLanes = data.lanes;
-      setLanes(newLanes);
+    if (!isHeatActive || !startTimestamp) {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      setElapsed(0);
+      return;
     }
-  }, [data, lanes]);
+
+    const tick = () => {
+      setElapsed((Date.now() - startTimestamp) / 1000);
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [isHeatActive, startTimestamp]);
+
+  // stop stopwatch and stop polling once all lanes are finished
+  useEffect(() => {
+    if (!isHeatActive) return;
+    const allFinished =
+      lanes.length > 0 && lanes.every((l) => l.status === "FINISHED");
+    if (allFinished && rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+      stopPolling();
+    }
+  }, [lanes, isHeatActive, stopPolling]);
 
   if (loading && lanes.length === 0)
     return <p className="text-center text-muted-foreground">Laddar banor...</p>;
@@ -59,6 +93,38 @@ export const HeatTable = ({
     return <p className="text-center text-destructive">Fel: {error.message}</p>;
 
   const sortedLanes = [...lanes].sort((a, b) => a.lane - b.lane);
+  const finished = sortedLanes.filter((l) => l.resultTime);
+  const leader =
+    finished.length > 0
+      ? Math.min(...finished.map((l) => parseFloat(l.resultTime!)))
+      : null;
+
+  const getRank = (lane: Lane) => {
+    if (!lane.resultTime) return "-";
+    const ranked = [...finished].sort(
+      (a, b) => parseFloat(a.resultTime!) - parseFloat(b.resultTime!)
+    );
+    return ranked.findIndex((l) => l.id === lane.id) + 1 || "-";
+  };
+
+  const getDelta = (lane: Lane) => {
+    if (!leader || !lane.resultTime) return "-";
+    const delta = parseFloat(lane.resultTime) - leader;
+    return delta <= 0 ? "-" : `+${delta.toFixed(2)}`;
+  };
+
+  const getRowColor = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return "bg-yellow-300/50 border-l-4 border-yellow-500"; // Gold
+      case 2:
+        return "bg-gray-300/50 border-l-4 border-gray-500"; // Silver
+      case 3:
+        return "bg-amber-600/30 border-l-4 border-amber-700"; // Bronze
+      default:
+        return "";
+    }
+  };
 
   const getStatusBadge = (status: Lane["status"]) => {
     switch (status) {
@@ -75,60 +141,90 @@ export const HeatTable = ({
 
   return (
     <div className="space-y-4">
+      {/* Header with stopwatch */}
       {heatNumber && (
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-2">
           <h2 className="text-xl font-semibold text-foreground">
             Heat {heatNumber}
           </h2>
+          {isHeatActive && (
+            <span className="font-mono text-lg text-sport-ongoing">
+              🕒 {elapsed.toFixed(2)}s
+            </span>
+          )}
         </div>
       )}
 
       {/* Desktop Table */}
       <div className="hidden md:block">
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted hover:bg-muted">
-                <TableHead className="w-16">Bana</TableHead>
-                <TableHead>Simmare</TableHead>
+                <TableHead className="text-center w-12">Bana</TableHead>
+                <TableHead>Name</TableHead>
                 <TableHead>Klubb</TableHead>
-                <TableHead className="w-16">År</TableHead>
-                <TableHead className="w-24">Seed</TableHead>
-                <TableHead className="w-24">Resultat</TableHead>
-                <TableHead className="w-28">Status</TableHead>
+                <TableHead className="text-center w-16">År</TableHead>
+                <TableHead className="text-center w-16">Seed</TableHead>
+                <TableHead className="text-center w-16">Heat Rk</TableHead>
+                <TableHead className="text-center w-16">Tid</TableHead>
+                <TableHead className="text-center w-16">Δ</TableHead>
+                <TableHead className="text-center w-28">Status</TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
-              {sortedLanes.map((lane) => (
-                <motion.tr
-                  key={lane.id}
-                  layout
-                  transition={{ duration: 0.25 }}
-                  className={cn(
-                    "transition-colors",
-                    lane.status === "ONGOING" && "bg-sport-ongoing/10",
-                    lane.status === "OFFICIAL" && "bg-sport-official/5"
-                  )}
-                >
-                  <TableCell className="font-bold text-center">
-                    {lane.lane}
-                  </TableCell>
-                  <TableCell className="font-medium">{lane.swimmer}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {lane.club}
-                  </TableCell>
-                  <TableCell className="text-center text-muted-foreground">
-                    {lane.year}
-                  </TableCell>
-                  <TableCell className="text-center font-mono">
-                    {lane.seedTime}
-                  </TableCell>
-                  <TableCell className="text-center font-mono font-semibold">
-                    {lane.resultTime || "-"}
-                  </TableCell>
-                  <TableCell>{getStatusBadge(lane.status)}</TableCell>
-                </motion.tr>
-              ))}
+              {sortedLanes.map((lane) => {
+                const rank = getRank(lane);
+                const delta = getDelta(lane);
+                const rowStyle =
+                  lane.status === "FINISHED" && typeof rank === "number"
+                    ? getRowColor(rank)
+                    : "";
+
+                return (
+                  <motion.tr
+                    key={lane.id}
+                    layout
+                    transition={{ duration: 0.3 }}
+                    className={cn(
+                      "transition-colors",
+                      rowStyle,
+                      lane.status === "ONGOING" && "bg-sport-ongoing/10"
+                    )}
+                  >
+                    <TableCell className="text-center font-semibold">
+                      {lane.lane}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {lane.swimmer}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {lane.club}
+                    </TableCell>
+                    <TableCell className="text-center text-muted-foreground">
+                      {lane.year}
+                    </TableCell>
+                    <TableCell className="text-center font-mono">
+                      {lane.seedTime}
+                    </TableCell>
+                    <TableCell className="text-center font-semibold">
+                      {rank}
+                    </TableCell>
+                    <TableCell className="text-center font-mono font-semibold">
+                      {lane.status === "ONGOING"
+                        ? elapsed.toFixed(2)
+                        : lane.resultTime || "-"}
+                    </TableCell>
+                    <TableCell className="text-center font-mono text-muted-foreground">
+                      {delta}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {getStatusBadge(lane.status)}
+                    </TableCell>
+                  </motion.tr>
+                );
+              })}
             </TableBody>
           </Table>
         </Card>
