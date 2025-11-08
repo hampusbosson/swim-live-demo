@@ -18,11 +18,14 @@ import {
   getEventByHeatData,
   GetMeetByIdData,
 } from "@/types/swim";
+import { useState } from "react";
 
 const HeatView = () => {
   const params = useParams();
   const meetId = params.id as string;
   const heatId = params.heatId as string;
+
+  const [isHeatActive, setIsHeatActive] = useState<boolean>();
 
   // --- Meet info ---
   const {
@@ -50,6 +53,16 @@ const HeatView = () => {
   const [resetHeat, { loading: resetting }] = useMutation(RESET_HEAT, {
     variables: { heatId },
   });
+
+  const handleStartHeat = async () => {
+    setIsHeatActive(true);
+    await startHeat();
+  }
+
+  const handleResetHeat = async () => {
+    setIsHeatActive(false);
+    await resetHeat();
+  }
 
   // --- Handle loading/errors ---
   if (meetLoading || eventLoading)
@@ -83,12 +96,12 @@ const HeatView = () => {
 
         {/* --- Simulation Controls --- */}
         <div className="flex gap-2">
-          <Button onClick={() => startHeat()} disabled={starting}>
+          <Button onClick={handleStartHeat} disabled={starting}>
             <Play className="mr-2 h-4 w-4" /> Starta simulering
           </Button>
           <Button
             variant="secondary"
-            onClick={() => resetHeat()}
+            onClick={handleResetHeat}
             disabled={resetting}
           >
             <RotateCcw className="mr-2 h-4 w-4" /> Återställ
@@ -96,7 +109,7 @@ const HeatView = () => {
         </div>
 
         {/* --- Heat Table (self-polling) --- */}
-        <HeatTable heatId={heatId} heatNumber={1} />
+        <HeatTable heatId={heatId} heatNumber={1} isHeatActive={isHeatActive}/>
       </main>
     </div>
   );

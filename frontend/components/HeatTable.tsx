@@ -20,16 +20,31 @@ import { motion } from "framer-motion";
 interface HeatTableProps {
   heatId: string;
   heatNumber?: number;
+  isHeatActive?: boolean;
 }
 
-export const HeatTable = ({ heatId, heatNumber }: HeatTableProps) => {
-  const { data, loading, error } = useQuery<getLanesData>(GET_LANES, {
-    variables: { heatId },
-    pollInterval: 1500,
-    notifyOnNetworkStatusChange: true,
-  });
+export const HeatTable = ({
+  heatId,
+  heatNumber,
+  isHeatActive,
+}: HeatTableProps) => {
+  const { data, loading, error, startPolling, stopPolling, refetch } =
+    useQuery<getLanesData>(GET_LANES, {
+      variables: { heatId },
+      pollInterval: isHeatActive ? 300 : 0, // conditional polling
+      notifyOnNetworkStatusChange: true,
+    });
 
   const [lanes, setLanes] = useState<Lane[]>([]);
+
+  useEffect(() => {
+    if (isHeatActive) {
+      refetch().then(() => startPolling(300));
+    } else {
+      stopPolling();
+      refetch();
+    }
+  }, [isHeatActive, startPolling, stopPolling, refetch]);
 
   useEffect(() => {
     if (data?.lanes) {
@@ -62,7 +77,9 @@ export const HeatTable = ({ heatId, heatNumber }: HeatTableProps) => {
     <div className="space-y-4">
       {heatNumber && (
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-foreground">Heat {heatNumber}</h2>
+          <h2 className="text-xl font-semibold text-foreground">
+            Heat {heatNumber}
+          </h2>
         </div>
       )}
 
@@ -93,13 +110,19 @@ export const HeatTable = ({ heatId, heatNumber }: HeatTableProps) => {
                     lane.status === "OFFICIAL" && "bg-sport-official/5"
                   )}
                 >
-                  <TableCell className="font-bold text-center">{lane.lane}</TableCell>
+                  <TableCell className="font-bold text-center">
+                    {lane.lane}
+                  </TableCell>
                   <TableCell className="font-medium">{lane.swimmer}</TableCell>
-                  <TableCell className="text-muted-foreground">{lane.club}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {lane.club}
+                  </TableCell>
                   <TableCell className="text-center text-muted-foreground">
                     {lane.year}
                   </TableCell>
-                  <TableCell className="text-center font-mono">{lane.seedTime}</TableCell>
+                  <TableCell className="text-center font-mono">
+                    {lane.seedTime}
+                  </TableCell>
                   <TableCell className="text-center font-mono font-semibold">
                     {lane.resultTime || "-"}
                   </TableCell>
