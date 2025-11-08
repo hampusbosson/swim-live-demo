@@ -29,6 +29,7 @@ export interface Heat {
   eventId: string;
   number: number;
   startTime: string;
+  startTimestamp: number | null;
 }
 
 export interface Lane {
@@ -63,11 +64,15 @@ export interface GetHeatsData {
     heats: Heat[];
 }
 
-export interface getLanesData {
+export interface GetLanesData {
     lanes: Lane[];
 }
 
-export interface getEventByHeatData {
+export interface GetEventByHeatData {
     eventByHeat: Event;
+}
+
+export interface GetHeatByIdData {
+    heat: Heat;
 }
 

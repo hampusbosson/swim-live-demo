@@ -21,3 +21,14 @@ export const GET_HEATS_BY_EVENT = gql`
     }
   }
 `;
+
+export const GET_HEAT_BY_ID = gql`
+  query GetHeat($id: ID!) {
+    heat(id: $id) {
+      id
+      eventId
+      number
+      startTimestamp
+    }
+  }
+`;
