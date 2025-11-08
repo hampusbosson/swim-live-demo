@@ -1,10 +1,10 @@
-import { Event } from "@/data/mockData";
+import { Event } from "@/types/swim";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 
 interface EventHeaderProps {
-  event: Event;
+  event: Event | null;
   bannerUrl?: string;
 }
 
@@ -28,17 +28,17 @@ export const EventHeader = ({ event, bannerUrl }: EventHeaderProps) => {
       <div className="space-y-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-            {event.name}
+            {event?.name}
           </h1>
           <div className="flex flex-wrap gap-2 mt-2">
             <Badge variant="secondary" className="text-xs">
-              {event.distance}m
+              {event?.distance}m
             </Badge>
             <Badge variant="secondary" className="text-xs">
-              {event.stroke}
+              {event?.stroke}
             </Badge>
             <Badge variant="secondary" className="text-xs">
-              {event.category}
+              {event?.category}
             </Badge>
           </div>
         </div>
