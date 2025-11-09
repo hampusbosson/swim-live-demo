@@ -33,7 +33,7 @@ const HeatView = () => {
     setActiveTab(tab);
   };
 
-  const [isHeatActive, setIsHeatActive] = useState<boolean>();
+  const [isHeatActive, setIsHeatActive] = useState<boolean>(false);
 
   //Meet info
   const {
@@ -77,7 +77,6 @@ const HeatView = () => {
     setIsHeatActive(true);
     await startHeat();
     await refetchHeat();
-    console.log(heatStartTimestamp);
   };
 
   const handleResetHeat = async () => {
