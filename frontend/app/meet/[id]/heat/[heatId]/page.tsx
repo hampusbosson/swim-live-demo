@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "@apollo/client/react";
 import { TopNav } from "@/components/TopNav";
 import { EventHeader } from "@/components/EventHeader";
 import { HeatTable } from "@/components/HeatTable";
+import { ResultTable } from "@/components/ResultsTable";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Play, RotateCcw } from "lucide-react";
 import Link from "next/link";
@@ -26,6 +27,11 @@ const HeatView = () => {
   const params = useParams();
   const meetId = params.id as string;
   const heatId = params.heatId as string;
+
+  const [activeTab, setActiveTab] = useState("heats");
+  const onTabChange = (tab: string) => {
+    setActiveTab(tab);
+  };
 
   const [isHeatActive, setIsHeatActive] = useState<boolean>();
 
@@ -77,7 +83,7 @@ const HeatView = () => {
   const handleResetHeat = async () => {
     setIsHeatActive(false);
     await resetHeat();
-    await refetchHeat(); 
+    await refetchHeat();
   };
 
   //Handle loading/errors
@@ -93,6 +99,7 @@ const HeatView = () => {
 
   const meet = meetData?.meet;
   const event = eventData?.eventByHeat ?? null;
+  const heatNumber = heatData?.heat?.number;
   const heatStartTimestamp = heatData?.heat?.startTimestamp ?? null;
 
   return (
@@ -109,7 +116,12 @@ const HeatView = () => {
         </Link>
 
         {/* --- Event Header --- */}
-        <EventHeader event={event} bannerUrl={meet?.bannerUrl} />
+        <EventHeader
+          event={event}
+          bannerUrl={meet?.bannerUrl}
+          activeTab={activeTab}
+          onTabChange={onTabChange}
+        />
 
         {/* --- Simulation Controls --- */}
         <div className="flex gap-2">
@@ -125,13 +137,18 @@ const HeatView = () => {
           </Button>
         </div>
 
-        {/* --- Heat Table (self-polling) --- */}
-        <HeatTable
-          heatId={heatId}
-          heatNumber={1}
-          isHeatActive={isHeatActive}
-          startTimestamp={heatStartTimestamp}
-        />
+        {activeTab === "heats" && (
+          <HeatTable
+            heatId={heatId}
+            heatNumber={1}
+            isHeatActive={isHeatActive}
+            startTimestamp={heatStartTimestamp}
+          />
+        )}
+
+        {activeTab === "results" && (
+          <ResultTable heatId={heatId} heatNumber={heatNumber}/>
+        )}
       </main>
     </div>
   );

@@ -6,9 +6,11 @@ import Image from "next/image";
 interface EventHeaderProps {
   event: Event | null;
   bannerUrl?: string;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
 }
 
-export const EventHeader = ({ event, bannerUrl }: EventHeaderProps) => {
+export const EventHeader = ({ event, bannerUrl, activeTab, onTabChange }: EventHeaderProps) => {
   return (
     <div className="space-y-4">
       {/* Banner */}
@@ -44,11 +46,11 @@ export const EventHeader = ({ event, bannerUrl }: EventHeaderProps) => {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="heats" className="w-full">
+        <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="entries">Anmälda</TabsTrigger>
             <TabsTrigger value="heats">Heats</TabsTrigger>
-            <TabsTrigger value="summary">Sammanfattning</TabsTrigger>
+            <TabsTrigger value="results">Resultat</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>

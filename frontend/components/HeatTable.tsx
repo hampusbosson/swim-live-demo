@@ -15,6 +15,8 @@ import {
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { GET_LANES } from "@/app/api/graphql/queries/laneQueries";
+import { SAVE_HEAT_RESULTS } from "@/app/api/graphql/mutations/heatMutations";
+import { useMutation } from "@apollo/client/react";
 import { motion } from "framer-motion";
 
 interface HeatTableProps {
@@ -36,6 +38,8 @@ export const HeatTable = ({
       pollInterval: isHeatActive ? 1200 : 0,
       notifyOnNetworkStatusChange: true,
     });
+
+  const [saveHeatResults, { loading: saving }] = useMutation(SAVE_HEAT_RESULTS);
 
   const [lanes, setLanes] = useState<Lane[]>([]);
   const [elapsed, setElapsed] = useState<number>(0);
@@ -75,7 +79,7 @@ export const HeatTable = ({
     };
   }, [isHeatActive, startTimestamp]);
 
-  // stop stopwatch and stop polling once all lanes are finished
+  // stop stopwatch,stop polling and save results once all lanes are finished
   useEffect(() => {
     if (!isHeatActive) return;
     const allFinished =
@@ -84,8 +88,11 @@ export const HeatTable = ({
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
       stopPolling();
+      saveHeatResults({ variables: { heatId } })
+        .then((res) => console.log("Heat results saved", res.data.saveHeatResults))
+        .catch((err) => console.error("Save failed: ", err));
     }
-  }, [lanes, isHeatActive, stopPolling]);
+  }, [lanes, isHeatActive, stopPolling, saveHeatResults, heatId]);
 
   if (loading && lanes.length === 0)
     return <p className="text-center text-muted-foreground">Laddar banor...</p>;
