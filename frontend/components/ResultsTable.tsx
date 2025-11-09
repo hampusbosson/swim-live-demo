@@ -51,8 +51,6 @@ export const ResultTable = ({ heatId, heatNumber }: ResultTableProps) => {
     (a, b) => a.rank - b.rank
   );
 
-  console.log(data?.heatResults);
-
   const getRowColor = (rank: number) => {
     switch (rank) {
       case 1:
