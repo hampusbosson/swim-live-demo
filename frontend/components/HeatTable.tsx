@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { GET_LANES } from "@/app/api/graphql/queries/laneQueries";
 import { SAVE_HEAT_RESULTS } from "@/app/api/graphql/mutations/heatMutations";
+import { GET_HEAT_RESULTS } from "@/app/api/graphql/queries/heatQueries";
 import { useMutation } from "@apollo/client/react";
 import { motion } from "framer-motion";
 
@@ -32,14 +33,21 @@ export const HeatTable = ({
   isHeatActive,
   startTimestamp,
 }: HeatTableProps) => {
-  const { data, loading, error, startPolling, stopPolling, refetch } =
+  const { data, loading, error, startPolling, stopPolling} =
     useQuery<GetLanesData>(GET_LANES, {
       variables: { heatId },
-      pollInterval: isHeatActive ? 1200 : 0,
+      fetchPolicy: "network-only",
       notifyOnNetworkStatusChange: true,
     });
 
-  const [saveHeatResults, { loading: saving }] = useMutation(SAVE_HEAT_RESULTS);
+  const [saveHeatResults] = useMutation(SAVE_HEAT_RESULTS, {
+    refetchQueries: [
+      {
+        query: GET_HEAT_RESULTS,
+        variables: { heatId },
+      },
+    ],
+  });
 
   const [lanes, setLanes] = useState<Lane[]>([]);
   const [elapsed, setElapsed] = useState<number>(0);
@@ -52,13 +60,17 @@ export const HeatTable = ({
 
   // control polling
   useEffect(() => {
-    if (isHeatActive) {
-      refetch().then(() => startPolling(1200));
+    const allFinished =
+      lanes.length > 0 && lanes.every((l) => l.status === "FINISHED");
+
+    if (isHeatActive && !allFinished) {
+      console.log("Starting polling...");
+      startPolling(1200);
     } else {
+      console.log("Stopping polling...");
       stopPolling();
-      refetch();
     }
-  }, [isHeatActive, startPolling, stopPolling, refetch]);
+  }, [isHeatActive, lanes, startPolling, stopPolling]);
 
   // stopwatch
   useEffect(() => {
@@ -89,7 +101,7 @@ export const HeatTable = ({
       rafRef.current = null;
       stopPolling();
       saveHeatResults({ variables: { heatId } })
-        .then((res) => console.log("Heat results saved", res.data.saveHeatResults))
+        .then(() => console.log("Heat results saved"))
         .catch((err) => console.error("Save failed: ", err));
     }
   }, [lanes, isHeatActive, stopPolling, saveHeatResults, heatId]);
