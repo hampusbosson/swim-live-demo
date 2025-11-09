@@ -231,7 +231,7 @@ const resolvers = {
       const allFinished = lanes.every((l) => l.status === "FINISHED");
       if (!allFinished) {
         console.warn(`Heat ${heatId} not yet finished — skipping save.`);
-        return false;
+        return []; // return empty array if called before all lanes are finished
       }
 
       // sort lanes by result time
@@ -265,6 +265,24 @@ const yoga = createYoga({
   graphqlEndpoint: "/api/graphql",
   graphiql: true,
   fetchAPI: { Response },
+
+    plugins: [
+    {
+      onExecute: ({ args }) => {
+        const { operationName, document, variableValues } = args;
+        const query = document?.loc?.source?.body
+          ?.replace(/\s+/g, " ") // flatten whitespace for readability
+          ?.trim();
+
+        console.log("\n GraphQL Operation Called:");
+        console.log(`→ Operation: ${operationName || "Unnamed"}`);
+        console.log(`→ Query: ${query}`);
+        console.log(`→ Variables:`, variableValues);
+      },
+    },
+  ],
 });
+
+
 
 export { yoga as GET, yoga as POST };
