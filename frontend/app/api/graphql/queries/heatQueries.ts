@@ -32,3 +32,16 @@ export const GET_HEAT_BY_ID = gql`
     }
   }
 `;
+
+export const GET_HEAT_RESULTS = gql`
+  query GetHeatResults($heatId: ID!) {
+    heatResults(heatId: $heatId) {
+      lane
+      swimmer
+      club
+      resultTime
+      rank
+      heatId
+    }
+  }
+`;

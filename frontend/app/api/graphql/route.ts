@@ -6,9 +6,9 @@ import {
   mockHeats,
   mockLanes,
 } from "@/data/mockData";
-import { Meet, Session, Event, Heat, Lane } from "@/types/swim";
+import { Meet, Heat } from "@/types/swim";
 
-// ---- In-memory DB (mockad data hämtad från mockData-fil) ----
+// ---- In-memory DB (mocked data fetched from mockData-file) ----
 const db = {
   meets: mockMeets,
   sessions: mockSessions,
@@ -17,11 +17,13 @@ const db = {
   lanes: mockLanes,
 };
 
+const resultsDB: Record<string, unknown[]> = {}; // temp memory (later replace with actual DB)
+
 // Timers per heat (för att simulera pågående lopp)
 const simulators = new Map<string, NodeJS.Timeout>();
 
 // ---- GraphQL-schema ----
-const typeDefs = /* GraphQL */ `
+const typeDefs = `
   type Meet {
     id: ID!
     name: String!
@@ -68,6 +70,15 @@ const typeDefs = /* GraphQL */ `
     status: String!
   }
 
+  type HeatResult {
+    heatId: ID!
+    swimmer: String!
+    club: String!
+    lane: Int!
+    resultTime: String!
+    rank: Int!
+  }
+
   type Query {
     meets: [Meet!]!
     meet(id: ID!): Meet
@@ -78,11 +89,13 @@ const typeDefs = /* GraphQL */ `
     heats(eventId: ID, meetId: ID): [Heat!]!
     heat(id: ID!): Heat
     lanes(heatId: ID!): [Lane!]!
+    heatResults(heatId: ID!): [HeatResult!]!
   }
 
   type Mutation {
     startHeat(heatId: ID!): Boolean!
     resetHeat(heatId: ID!): Boolean!
+    saveHeatResults(heatId: ID!): [HeatResult!]!
   }
 `;
 
@@ -122,6 +135,8 @@ const resolvers = {
       db.heats.find((h) => h.id === id),
     lanes: (_: unknown, { heatId }: { heatId: string }) =>
       db.lanes.filter((l) => l.heatId === heatId),
+    heatResults: (_: unknown, { heatId }: { heatId: string }) =>
+      resultsDB[heatId] || [],
   },
 
   Mutation: {
@@ -148,12 +163,12 @@ const resolvers = {
         .filter((lane) => lane.heatId === heatId)
         .forEach((lane) => {
           const seedSeconds = parseFloat(lane.seedTime);
-          const variance = (Math.random() - 0.3) * 1.5;   // add natural randomness
+          const variance = (Math.random() - 0.3) * 1.5; // add natural randomness
           const target = Math.max(seedSeconds + variance, seedSeconds - 0.5); // prevent unrealistic improvement from seed time (no more than 0.5s improvement)
           targets.set(lane.id, target);
         });
 
-        // update interval every 100 ms
+      // update interval every 100 ms
       const t = setInterval(() => {
         const activeLanes = db.lanes.filter(
           (lane) => lane.heatId === heatId && lane.status === "ONGOING"
@@ -161,23 +176,23 @@ const resolvers = {
 
         // if all lanes have finished, clear interval and clean up
         if (!activeLanes.length) {
-            clearInterval(t);
-            simulators.delete(heatId);
-            return;
+          clearInterval(t);
+          simulators.delete(heatId);
+          return;
         }
-        
+
         // increment each active lanes current time
         activeLanes.forEach((lane) => {
-            const current = parseFloat(lane.resultTime ?? "0");
-            const target = targets.get(lane.id) ?? 0;
-            const next = current + 0.1;
+          const current = parseFloat(lane.resultTime ?? "0");
+          const target = targets.get(lane.id) ?? 0;
+          const next = current + 0.1;
 
-            if (next >= target) {
-                lane.resultTime = target.toFixed(2);
-                lane.status = "FINISHED"; // mark lane as done
-            } else {
-                lane.resultTime = next.toFixed(2); // update lane progress
-            }
+          if (next >= target) {
+            lane.resultTime = target.toFixed(2);
+            lane.status = "FINISHED"; // mark lane as done
+          } else {
+            lane.resultTime = next.toFixed(2); // update lane progress
+          }
         });
       }, 100);
 
@@ -206,6 +221,37 @@ const resolvers = {
           l.resultTime = null;
         });
       return true;
+    },
+
+    saveHeatResults: (_: Heat, { heatId }: { heatId: string }) => {
+      // get lanes belonging to this heat
+      const lanes = db.lanes.filter((l) => l.heatId === heatId);
+
+      // ensure that all lanes are finished before saving
+      const allFinished = lanes.every((l) => l.status === "FINISHED");
+      if (!allFinished) {
+        console.warn(`Heat ${heatId} not yet finished — skipping save.`);
+        return false;
+      }
+
+      // sort lanes by result time
+      const ranked = lanes
+        .filter((l) => l.resultTime)
+        .sort((a, b) => parseFloat(a.resultTime!) - parseFloat(b.resultTime!))
+        .map((lane, i) => ({
+          heatId,
+          swimmer: lane.swimmer,
+          club: lane.club,
+          lane: lane.lane,
+          resultTime: lane.resultTime!,
+          rank: i + 1,
+        }));
+
+      // save into memory DB
+      resultsDB[heatId] = ranked;
+
+      console.log(`Saved results for heat ${heatId}`, ranked);
+      return ranked;
     },
   },
 };

@@ -11,3 +11,16 @@ export const RESET_HEAT = gql`
     resetHeat(heatId: $heatId)
   }
 `;
+
+export const SAVE_HEAT_RESULTS = gql`
+  mutation SaveHeatResults($heatId: ID!) {
+    saveHeatResults(heatId: $heatId) {
+      lane
+      swimmer
+      club
+      resultTime
+      rank
+    }
+  }
+`;
+
