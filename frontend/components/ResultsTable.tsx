@@ -34,7 +34,6 @@ interface ResultTableProps {
 }
 
 export const ResultTable = ({ heatId, heatNumber }: ResultTableProps) => {
-
   const { data, loading, error } = useQuery<GetHeatResultsData>(
     GET_HEAT_RESULTS,
     { variables: { heatId } }
@@ -91,34 +90,47 @@ export const ResultTable = ({ heatId, heatNumber }: ResultTableProps) => {
             </TableHeader>
 
             <TableBody>
-              {results.map((r) => (
-                <motion.tr
-                  key={r.lane}
-                  layout
-                  transition={{ duration: 0.3 }}
-                  className={cn(
-                    "transition-colors",
-                    getRowColor(r.rank),
-                    "hover:bg-muted/40"
-                  )}
-                >
-                  <TableCell className="text-center font-semibold">
-                    {r.rank}
+              {results.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="text-center py-8 text-muted-foreground italic"
+                  >
+                    Inget resultat finns tillgängligt ännu. 
+                    <br />
+                    Starta en simulering för att visa resultat.
                   </TableCell>
-                  <TableCell className="text-center font-semibold">
-                    {r.lane}
-                  </TableCell>
-                  <TableCell className="font-medium truncate max-w-[140px]">
-                    {r.swimmer}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground truncate max-w-[140px]">
-                    {r.club}
-                  </TableCell>
-                  <TableCell className="text-center font-mono font-semibold">
-                    {r.resultTime}
-                  </TableCell>
-                </motion.tr>
-              ))}
+                </TableRow>
+              ) : (
+                results.map((r) => (
+                  <motion.tr
+                    key={r.lane}
+                    layout
+                    transition={{ duration: 0.3 }}
+                    className={cn(
+                      "transition-colors",
+                      getRowColor(r.rank),
+                      "hover:bg-muted/40"
+                    )}
+                  >
+                    <TableCell className="text-center font-semibold">
+                      {r.rank}
+                    </TableCell>
+                    <TableCell className="text-center font-semibold">
+                      {r.lane}
+                    </TableCell>
+                    <TableCell className="font-medium truncate max-w-[140px]">
+                      {r.swimmer}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground truncate max-w-[140px]">
+                      {r.club}
+                    </TableCell>
+                    <TableCell className="text-center font-mono font-semibold">
+                      {r.resultTime}
+                    </TableCell>
+                  </motion.tr>
+                ))
+              )}
             </TableBody>
           </Table>
         </Card>
