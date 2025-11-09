@@ -48,7 +48,7 @@ export const EventHeader = ({ event, bannerUrl, activeTab, onTabChange }: EventH
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-3">
-            <TabsTrigger value="entries">Anmälda</TabsTrigger>
+            <TabsTrigger value="participants">Anmälda</TabsTrigger>
             <TabsTrigger value="heats">Heats</TabsTrigger>
             <TabsTrigger value="results">Resultat</TabsTrigger>
           </TabsList>
