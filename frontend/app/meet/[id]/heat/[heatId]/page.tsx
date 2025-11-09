@@ -5,6 +5,7 @@ import { TopNav } from "@/components/TopNav";
 import { EventHeader } from "@/components/EventHeader";
 import { HeatTable } from "@/components/HeatTable";
 import { ResultTable } from "@/components/ResultsTable";
+import { ParticipantsTable } from "@/components/ParticipantsTable";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Play, RotateCcw } from "lucide-react";
 import Link from "next/link";
@@ -148,6 +149,11 @@ const HeatView = () => {
         {activeTab === "results" && (
           <ResultTable heatId={heatId} heatNumber={heatNumber}/>
         )}
+
+        {activeTab === "participants" && (
+          <ParticipantsTable heatId={heatId}/>
+        )}
+
       </main>
     </div>
   );
