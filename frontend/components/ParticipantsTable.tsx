@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@apollo/client/react";
 import { GET_LANES } from "@/app/api/graphql/queries/laneQueries";
-import { GetLanesData } from "@/types/swim";
+import { GetLanesData } from "@/types";
 
 interface ParticipantsTableProps {
   heatId: string;

@@ -6,7 +6,7 @@ import {
   mockHeats,
   mockLanes,
 } from "@/data/mockData";
-import { Meet, Heat } from "@/types/swim";
+import { Meet, Heat } from "@/types";
 
 // ---- In-memory DB (mocked data fetched from mockData-file) ----
 const db = {

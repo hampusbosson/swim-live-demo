@@ -4,7 +4,7 @@
 import { useQuery } from "@apollo/client/react";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Lane, GetLanesData } from "@/types/swim";
+import { Lane, GetLanesData } from "@/types";
 import {
   Table,
   TableBody,

@@ -21,7 +21,7 @@ import {
   GetMeetByIdData,
   Heat,
   GetHeatsData,
-} from "@/types/swim";
+} from "@/types";
 import { useQuery } from "@apollo/client/react";
 
 const MeetDetails = () => {

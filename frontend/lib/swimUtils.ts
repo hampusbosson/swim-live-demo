@@ -1,4 +1,4 @@
-import type { Lane } from "@/types/swim";
+import type { Lane } from "@/types";
 
 export const getLeaderTime = (lanes: Lane[]): number | null => {
   const finished = lanes.filter((l) => l.resultTime);

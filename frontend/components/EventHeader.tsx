@@ -1,4 +1,4 @@
-import { Event } from "@/types/swim";
+import { Event } from "@/types";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";

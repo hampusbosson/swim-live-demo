@@ -21,7 +21,7 @@ import {
   GetEventByHeatData,
   GetMeetByIdData,
   GetHeatByIdData,
-} from "@/types/swim";
+} from "@/types";
 import { useState } from "react";
 
 const HeatView = () => {
