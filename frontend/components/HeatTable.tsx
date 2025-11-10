@@ -19,6 +19,7 @@ import { GET_LANES } from "@/app/api/graphql/queries/laneQueries";
 import { SAVE_HEAT_RESULTS } from "@/app/api/graphql/mutations/heatMutations";
 import { GET_HEAT_RESULTS } from "@/app/api/graphql/queries/heatQueries";
 import { getRowColor } from "@/lib/tableUtils";
+import { getLeaderTime, getRank, getDelta } from "@/lib/swimUtils";
 import { useMutation } from "@apollo/client/react";
 import { motion } from "framer-motion";
 
@@ -127,24 +128,7 @@ export const HeatTable = ({
 
   const sortedLanes = [...lanes].sort((a, b) => a.lane - b.lane);
   const finished = sortedLanes.filter((l) => l.resultTime);
-  const leader =
-    finished.length > 0
-      ? Math.min(...finished.map((l) => parseFloat(l.resultTime!)))
-      : null;
-
-  const getRank = (lane: Lane) => {
-    if (!lane.resultTime) return "-";
-    const ranked = [...finished].sort(
-      (a, b) => parseFloat(a.resultTime!) - parseFloat(b.resultTime!)
-    );
-    return ranked.findIndex((l) => l.id === lane.id) + 1 || "-";
-  };
-
-  const getDelta = (lane: Lane) => {
-    if (!leader || !lane.resultTime) return "-";
-    const delta = parseFloat(lane.resultTime) - leader;
-    return delta <= 0 ? "-" : `+${delta.toFixed(2)}`;
-  };
+  const leaderTime = getLeaderTime(sortedLanes);
 
   const getStatusBadge = (status: Lane["status"]) => {
     switch (status) {
@@ -195,8 +179,8 @@ export const HeatTable = ({
 
             <TableBody>
               {sortedLanes.map((lane) => {
-                const rank = getRank(lane);
-                const delta = getDelta(lane);
+                const rank = getRank(lane, finished);
+                const delta = getDelta(lane, leaderTime);
                 const rowStyle =
                   lane.status === "FINISHED" && typeof rank === "number"
                     ? getRowColor(rank)
