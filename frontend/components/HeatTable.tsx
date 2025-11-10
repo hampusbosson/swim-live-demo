@@ -2,7 +2,7 @@
 "use client";
 
 import { useQuery } from "@apollo/client/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Lane, GetLanesData } from "@/types/swim";
 import {
@@ -20,6 +20,7 @@ import { SAVE_HEAT_RESULTS } from "@/app/api/graphql/mutations/heatMutations";
 import { GET_HEAT_RESULTS } from "@/app/api/graphql/queries/heatQueries";
 import { getRowColor } from "@/lib/tableUtils";
 import { getLeaderTime, getRank, getDelta } from "@/lib/swimUtils";
+import { useStopwatch } from "@/hooks/useStopwatch";
 import { useMutation } from "@apollo/client/react";
 import { motion } from "framer-motion";
 
@@ -36,6 +37,12 @@ export const HeatTable = ({
   isHeatActive,
   startTimestamp,
 }: HeatTableProps) => {
+  const [lanes, setLanes] = useState<Lane[]>([]);
+  const { elapsed, setElapsed, rafRef } = useStopwatch(
+    isHeatActive,
+    startTimestamp
+  );
+
   const { data, loading, error, startPolling, stopPolling } =
     useQuery<GetLanesData>(GET_LANES, {
       variables: { heatId },
@@ -51,10 +58,6 @@ export const HeatTable = ({
       },
     ],
   });
-
-  const [lanes, setLanes] = useState<Lane[]>([]);
-  const [elapsed, setElapsed] = useState<number>(0);
-  const rafRef = useRef<number | null>(null);
 
   // sync lanes
   useEffect(() => {
@@ -74,25 +77,6 @@ export const HeatTable = ({
       stopPolling();
     }
   }, [isHeatActive, lanes, startPolling, stopPolling]);
-
-  // stopwatch
-  useEffect(() => {
-    if (!isHeatActive || !startTimestamp) {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      setElapsed(0);
-      return;
-    }
-
-    const tick = () => {
-      setElapsed((Date.now() - startTimestamp) / 1000);
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, [isHeatActive, startTimestamp]);
 
   // stop stopwatch, stop polling and save results once all lanes are finished
   useEffect(() => {
@@ -119,7 +103,15 @@ export const HeatTable = ({
         .then(() => console.log("heat results saved"))
         .catch((err) => console.error("Save failed: ", err));
     }
-  }, [lanes, isHeatActive, stopPolling, saveHeatResults, heatId]);
+  }, [
+    lanes,
+    isHeatActive,
+    stopPolling,
+    saveHeatResults,
+    heatId,
+    rafRef,
+    setElapsed,
+  ]);
 
   if (loading && lanes.length === 0)
     return <p className="text-center text-muted-foreground">Laddar banor...</p>;
