@@ -91,20 +91,32 @@ export const HeatTable = ({
     };
   }, [isHeatActive, startTimestamp]);
 
-  // stop stopwatch,stop polling and save results once all lanes are finished
-  useEffect(() => {
-    if (!isHeatActive) return;
-    const allFinished =
-      lanes.length > 0 && lanes.every((l) => l.status === "FINISHED");
-    if (allFinished && rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-      stopPolling();
-      saveHeatResults({ variables: { heatId } })
-        .then(() => console.log("Heat results saved"))
-        .catch((err) => console.error("Save failed: ", err));
-    }
-  }, [lanes, isHeatActive, stopPolling, saveHeatResults, heatId]);
+// stop stopwatch, stop polling and save results once all lanes are finished
+useEffect(() => {
+  if (!isHeatActive) return;
+
+  const allFinished =
+    lanes.length > 0 && lanes.every((l) => l.status === "FINISHED");
+
+  if (allFinished && rafRef.current) {
+    console.log("heat done, stopping stopwatch and polling");
+
+    // Stop animation loop
+    cancelAnimationFrame(rafRef.current);
+    rafRef.current = null;
+
+    // Reset elapsed time
+    setElapsed(0);
+
+    // Stop polling
+    stopPolling();
+
+    // Save results
+    saveHeatResults({ variables: { heatId } })
+      .then(() => console.log("heat results saved"))
+      .catch((err) => console.error("Save failed: ", err));
+  }
+}, [lanes, isHeatActive, stopPolling, saveHeatResults, heatId]);
 
   if (loading && lanes.length === 0)
     return <p className="text-center text-muted-foreground">Laddar banor...</p>;
