@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@apollo/client/react";
 import { GET_HEAT_RESULTS } from "@/app/api/graphql/queries/heatQueries";
+import { getRowColor } from "@/lib/tableUtils";
 
 interface Result {
   heatId: string;
@@ -49,19 +50,6 @@ export const ResultTable = ({ heatId, heatNumber }: ResultTableProps) => {
   const results = [...(data?.heatResults || [])].sort(
     (a, b) => a.rank - b.rank
   );
-
-  const getRowColor = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return "bg-yellow-300/50 border-l-4 border-yellow-500"; // Gold
-      case 2:
-        return "bg-gray-300/50 border-l-4 border-gray-500"; // Silver
-      case 3:
-        return "bg-amber-600/30 border-l-4 border-amber-700"; // Bronze
-      default:
-        return "";
-    }
-  };
 
   return (
     <div className="space-y-4">

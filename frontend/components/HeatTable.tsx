@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useQuery } from "@apollo/client/react";
@@ -17,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { GET_LANES } from "@/app/api/graphql/queries/laneQueries";
 import { SAVE_HEAT_RESULTS } from "@/app/api/graphql/mutations/heatMutations";
 import { GET_HEAT_RESULTS } from "@/app/api/graphql/queries/heatQueries";
+import { getRowColor } from "@/lib/tableUtils";
 import { useMutation } from "@apollo/client/react";
 import { motion } from "framer-motion";
 
@@ -33,7 +35,7 @@ export const HeatTable = ({
   isHeatActive,
   startTimestamp,
 }: HeatTableProps) => {
-  const { data, loading, error, startPolling, stopPolling} =
+  const { data, loading, error, startPolling, stopPolling } =
     useQuery<GetLanesData>(GET_LANES, {
       variables: { heatId },
       fetchPolicy: "network-only",
@@ -91,32 +93,32 @@ export const HeatTable = ({
     };
   }, [isHeatActive, startTimestamp]);
 
-// stop stopwatch, stop polling and save results once all lanes are finished
-useEffect(() => {
-  if (!isHeatActive) return;
+  // stop stopwatch, stop polling and save results once all lanes are finished
+  useEffect(() => {
+    if (!isHeatActive) return;
 
-  const allFinished =
-    lanes.length > 0 && lanes.every((l) => l.status === "FINISHED");
+    const allFinished =
+      lanes.length > 0 && lanes.every((l) => l.status === "FINISHED");
 
-  if (allFinished && rafRef.current) {
-    console.log("heat done, stopping stopwatch and polling");
+    if (allFinished && rafRef.current) {
+      console.log("heat done, stopping stopwatch and polling");
 
-    // Stop animation loop
-    cancelAnimationFrame(rafRef.current);
-    rafRef.current = null;
+      // Stop animation loop
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
 
-    // Reset elapsed time
-    setElapsed(0);
+      // Reset elapsed time
+      setElapsed(0);
 
-    // Stop polling
-    stopPolling();
+      // Stop polling
+      stopPolling();
 
-    // Save results
-    saveHeatResults({ variables: { heatId } })
-      .then(() => console.log("heat results saved"))
-      .catch((err) => console.error("Save failed: ", err));
-  }
-}, [lanes, isHeatActive, stopPolling, saveHeatResults, heatId]);
+      // Save results
+      saveHeatResults({ variables: { heatId } })
+        .then(() => console.log("heat results saved"))
+        .catch((err) => console.error("Save failed: ", err));
+    }
+  }, [lanes, isHeatActive, stopPolling, saveHeatResults, heatId]);
 
   if (loading && lanes.length === 0)
     return <p className="text-center text-muted-foreground">Laddar banor...</p>;
@@ -142,19 +144,6 @@ useEffect(() => {
     if (!leader || !lane.resultTime) return "-";
     const delta = parseFloat(lane.resultTime) - leader;
     return delta <= 0 ? "-" : `+${delta.toFixed(2)}`;
-  };
-
-  const getRowColor = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return "bg-yellow-300/50 border-l-4 border-yellow-500"; // Gold
-      case 2:
-        return "bg-gray-300/50 border-l-4 border-gray-500"; // Silver
-      case 3:
-        return "bg-amber-600/30 border-l-4 border-amber-700"; // Bronze
-      default:
-        return "";
-    }
   };
 
   const getStatusBadge = (status: Lane["status"]) => {
