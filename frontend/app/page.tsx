@@ -5,9 +5,9 @@ import {
 } from "@apollo/client/react";
 import { TopNav } from "@/components/TopNav";
 import { MeetCard } from "@/components/MeetCard";
-import { Meet } from "@/types/swim";
+import { Meet } from "@/types";
 import { GET_MEETS } from "./api/graphql/queries/meetQueries";
-import { GetMeetsData } from "@/types/swim";
+import { GetMeetsData } from "@/types";
 
 
 const Home = () => {
