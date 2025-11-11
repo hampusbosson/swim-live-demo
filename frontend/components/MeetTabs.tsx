@@ -1,7 +1,6 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
 import { EventsSection } from "@/components/EventsSection";
 import { Event, Heat, Session } from "@/types";
 import { EmptyState } from "./ui/empty-state";
