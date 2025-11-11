@@ -8,7 +8,7 @@ import {
 } from "@/data/mockData";
 import { Meet, Heat } from "@/types";
 
-// ---- In-memory DB (mocked data fetched from mockData-file) ----
+// In-memory DB (mocked data fetched from mockData-file)
 const db = {
   meets: mockMeets,
   sessions: mockSessions,
@@ -19,10 +19,9 @@ const db = {
 
 const resultsDB: Record<string, unknown[]> = {}; // temp memory (later replace with actual DB)
 
-// Timers per heat (för att simulera pågående lopp)
+// Timers per heat (to simulate ongoing heat)
 const simulators = new Map<string, NodeJS.Timeout>();
 
-// ---- GraphQL-schema ----
 const typeDefs = `
   type Meet {
     id: ID!
@@ -99,7 +98,6 @@ const typeDefs = `
   }
 `;
 
-// ---- Resolvers ----
 const resolvers = {
   Query: {
     meets: (): Meet[] => db.meets,
@@ -258,29 +256,13 @@ const resolvers = {
 
 const schema = createSchema({ typeDefs, resolvers });
 
-// ---- Next.js API integration ----
-export const dynamic = "force-dynamic"; // ingen caching
+//Next.js API integration
+export const dynamic = "force-dynamic";
 const yoga = createYoga({
   schema,
   graphqlEndpoint: "/api/graphql",
   graphiql: true,
   fetchAPI: { Response },
-
-    plugins: [
-    {
-      onExecute: ({ args }) => {
-        const { operationName, document, variableValues } = args;
-        const query = document?.loc?.source?.body
-          ?.replace(/\s+/g, " ") // flatten whitespace for readability
-          ?.trim();
-
-        console.log("\n GraphQL Operation Called:");
-        console.log(`→ Operation: ${operationName || "Unnamed"}`);
-        console.log(`→ Query: ${query}`);
-        console.log(`→ Variables:`, variableValues);
-      },
-    },
-  ],
 });
 
 
