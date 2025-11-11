@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { Search, Globe, Moon, Sun } from "lucide-react";
@@ -24,7 +25,7 @@ export const TopNav = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        {/* Logo */}
+      
         <Link href="/" className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-xl">
             LT
@@ -47,7 +48,6 @@ export const TopNav = () => {
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-2">
           {/* Mobile Search */}
           <Button
