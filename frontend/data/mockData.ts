@@ -1,4 +1,4 @@
-import { Meet, Session, Event, Heat, Lane } from "@/types/swim";
+import { Meet, Session, Event, Heat, Lane } from "@/types";
 
 export const mockMeets: Meet[] = [
   {
@@ -110,12 +110,12 @@ export const mockEvents: Event[] = [
 ];
 
 export const mockHeats: Heat[] = [
-  { id: "h1", eventId: "e1", number: 1, startTime: "2025-03-15T09:15:00" },
-  { id: "h2", eventId: "e1", number: 2, startTime: "2025-03-15T09:20:00" },
-  { id: "h3", eventId: "e2", number: 1, startTime: "2025-03-15T09:30:00" },
-  { id: "h4", eventId: "e3", number: 1, startTime: "2025-03-15T18:15:00" },
-  { id: "h5", eventId: "e4", number: 1, startTime: "2025-03-15T18:45:00" },
-  { id: "h6", eventId: "e5", number: 1, startTime: "2025-04-05T10:15:00" },
+  { id: "h1", eventId: "e1", number: 1, startTime: "2025-03-15T09:15:00", startTimestamp: null },
+  { id: "h2", eventId: "e1", number: 2, startTime: "2025-03-15T09:20:00", startTimestamp: null },
+  { id: "h3", eventId: "e2", number: 1, startTime: "2025-03-15T09:30:00", startTimestamp: null },
+  { id: "h4", eventId: "e3", number: 1, startTime: "2025-03-15T18:15:00", startTimestamp: null },
+  { id: "h5", eventId: "e4", number: 1, startTime: "2025-03-15T18:45:00", startTimestamp: null },
+  { id: "h6", eventId: "e5", number: 1, startTime: "2025-04-05T10:15:00", startTimestamp: null },
 ];
 
 export const mockLanes: Lane[] = [
