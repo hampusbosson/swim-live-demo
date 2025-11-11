@@ -12,35 +12,29 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@apollo/client/react";
-import { GET_LANES } from "@/app/api/graphql/queries/laneQueries";
-import { GetLanesData } from "@/types";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
+import { useHeatLanes } from "@/hooks/useHeatLanes";
 
 interface ParticipantsTableProps {
   heatId: string;
   heatNumber?: number;
 }
 
-export const ParticipantsTable = ({
-  heatId,
-  heatNumber,
-}: ParticipantsTableProps) => {
-  const { data, loading, error } = useQuery<GetLanesData>(GET_LANES, {
-    variables: { heatId },
-  });
+export const ParticipantsTable = ({ heatId, heatNumber }: ParticipantsTableProps) => {
+  // Fetch all lanes for this heat (no polling needed)
+  const { lanes, loading, error } = useHeatLanes(heatId);
 
-  if (loading)
-    return (
-      <p className="text-center text-muted-foreground">Laddar deltagare...</p>
-    );
+  //handle load/error states
+  if (loading) return <LoadingState text="Laddar deltagare..." />;
+  if (error) return <ErrorState message={error.message} />;
 
-  if (error)
-    return <p className="text-center text-destructive">Fel: {error.message}</p>;
-
-  const lanes = [...(data?.lanes || [])].sort((a, b) => a.lane - b.lane);
+  //sort lanes by lane number
+  const sortedLanes = [...lanes].sort((a, b) => a.lane - b.lane);
 
   return (
     <div className="space-y-4">
+      
       {heatNumber && (
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-xl font-semibold text-foreground">
@@ -66,7 +60,7 @@ export const ParticipantsTable = ({
             </TableHeader>
 
             <TableBody>
-              {lanes.length === 0 ? (
+              {sortedLanes.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={5}
@@ -76,7 +70,7 @@ export const ParticipantsTable = ({
                   </TableCell>
                 </TableRow>
               ) : (
-                lanes.map((lane) => (
+                sortedLanes.map((lane) => (
                   <motion.tr
                     key={lane.id}
                     layout

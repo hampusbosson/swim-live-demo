@@ -12,22 +12,12 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
 import { useQuery } from "@apollo/client/react";
 import { GET_HEAT_RESULTS } from "@/app/api/graphql/queries/heatQueries";
 import { getRowColor } from "@/lib/tableUtils";
-
-interface Result {
-  heatId: string;
-  swimmer: string;
-  club: string;
-  lane: number;
-  resultTime: string;
-  rank: number;
-}
-
-interface GetHeatResultsData {
-  heatResults: Result[];
-}
+import { GetHeatResultsData } from "@/types";
 
 interface ResultTableProps {
   heatId: string;
@@ -37,19 +27,18 @@ interface ResultTableProps {
 export const ResultTable = ({ heatId, heatNumber }: ResultTableProps) => {
   const { data, loading, error } = useQuery<GetHeatResultsData>(
     GET_HEAT_RESULTS,
-    { variables: { heatId } }
+    {
+      variables: { heatId },
+      fetchPolicy: "network-only",
+    }
   );
 
-  if (loading)
-    return <p className="text-center text-muted-foreground">Laddar resultat...</p>;
-  if (error)
-    return (
-      <p className="text-center text-destructive">Fel: {error.message}</p>
-    );
+  //handle loading and errors
+  if (loading) return <LoadingState text="Laddar resultat..." />;
+  if (error) return <ErrorState message={error.message} />;
 
-  const results = [...(data?.heatResults || [])].sort(
-    (a, b) => a.rank - b.rank
-  );
+  // transform and sort heat results
+  const results = [...(data?.heatResults || [])].sort((a, b) => a.rank - b.rank);
 
   return (
     <div className="space-y-4">
@@ -84,8 +73,7 @@ export const ResultTable = ({ heatId, heatNumber }: ResultTableProps) => {
                     colSpan={5}
                     className="text-center py-8 text-muted-foreground italic"
                   >
-                    Inget resultat finns tillgängligt ännu. 
-                    <br />
+                    Inget resultat finns tillgängligt ännu. <br />
                     Starta en simulering för att visa resultat.
                   </TableCell>
                 </TableRow>
@@ -96,9 +84,8 @@ export const ResultTable = ({ heatId, heatNumber }: ResultTableProps) => {
                     layout
                     transition={{ duration: 0.3 }}
                     className={cn(
-                      "transition-colors",
-                      getRowColor(r.rank),
-                      "hover:bg-muted/40"
+                      "transition-colors hover:bg-muted/40",
+                      getRowColor(r.rank)
                     )}
                   >
                     <TableCell className="text-center font-semibold">

@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { TopNav } from "@/components/TopNav";
-import { useEventData } from "@/hooks/useEventData";
+import { useMeetData } from "@/hooks/useMeetData";
 import { MeetHeader } from "@/components/MeetHeader";
 import { MeetTabs } from "@/components/MeetTabs";
 import { LoadingState } from "@/components/ui/loading-state";
@@ -14,7 +14,7 @@ const MeetDetails = () => {
   const params = useParams();
   const meetId = params.id as string;
 
-  const { meet, sessions, events, heats, loading, error } = useEventData(meetId);
+  const { meet, sessions, events, heats, loading, error } = useMeetData(meetId);
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>(
     undefined
   );

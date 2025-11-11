@@ -1,35 +1,22 @@
 "use client";
 
-import {
-  useQuery,
-} from "@apollo/client/react";
 import { TopNav } from "@/components/TopNav";
 import { MeetCard } from "@/components/MeetCard";
-import { Meet } from "@/types";
-import { GET_MEETS } from "./api/graphql/queries/meetQueries";
-import { GetMeetsData } from "@/types";
-
+import { useMeetsData } from "@/hooks/useMeetsData";
+import { LoadingState } from "@/components/ui/loading-state";
+import { ErrorState } from "@/components/ui/error-state";
 
 const Home = () => {
-  const { data, loading, error } = useQuery<GetMeetsData>(GET_MEETS);
+  const { meets, loading, error } = useMeetsData();
 
-  if (loading)
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">Laddar tävlingar...</p>
-      </div>
-    );
-
+  if (loading) return <LoadingState text="Laddar tävlingar..." fullScreen />;
   if (error)
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-destructive">
-          Fel vid hämtning av tävlingar: {error.message}
-        </p>
-      </div>
+      <ErrorState
+        message={error.message || "Kunde inte hämta tävlingar."}
+        fullScreen
+      />
     );
-
-  const meets = data?.meets ?? [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -46,10 +33,12 @@ const Home = () => {
         </div>
 
         {meets.length === 0 ? (
-          <p className="text-muted-foreground">Inga tävlingar hittades.</p>
+          <p className="text-muted-foreground text-center py-10">
+            Inga tävlingar hittades.
+          </p>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {meets.map((meet: Meet) => (
+            {meets.map((meet) => (
               <MeetCard key={meet.id} meet={meet} />
             ))}
           </div>
@@ -57,7 +46,6 @@ const Home = () => {
       </main>
     </div>
   );
-}
+};
 
 export default Home;
-

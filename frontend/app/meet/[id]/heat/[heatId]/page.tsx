@@ -7,7 +7,7 @@ import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { useEventData } from "@/hooks/useEventData";
+import { useHeatViewData } from "@/hooks/useHeatViewData";
 import { LoadingState } from "@/components/ui/loading-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { HeatControls } from "@/components/HeatControls";
@@ -25,7 +25,7 @@ const HeatView = () => {
 
   const [isHeatActive, setIsHeatActive] = useState<boolean>(false);
 
-  const { meet, event, heat, loading, error, refetchHeat } = useEventData(
+  const { meet, event, heat, loading, error, refetchHeat } = useHeatViewData(
     meetId,
     heatId
   );
