@@ -1,7 +1,8 @@
-import { Session } from "@/data/mockData";
+import { Session } from "@/types";
 import { cn } from "@/lib/utils";
 import { Clock } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { formatTime } from "@/lib/timeUtils";
 
 interface SessionSidebarProps {
   sessions: Session[];
@@ -16,13 +17,6 @@ export const SessionSidebar = ({
   onSessionClick,
   className,
 }: SessionSidebarProps) => {
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString("sv-SE", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
 
   return (
     <aside className={cn("space-y-2", className)}>
@@ -50,7 +44,7 @@ export const SessionSidebar = ({
             }}
           >
             <div className="flex items-start gap-2">
-              <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <Clock className="h-4 w-4 mt-0.5 shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">{session.name}</p>
                 <p

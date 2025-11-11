@@ -1,7 +1,8 @@
-import { Meet } from "@/data/mockData";
+import { Meet } from "@/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin } from "lucide-react";
+import { formatDate } from "@/lib/timeUtils";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -10,14 +11,6 @@ interface MeetCardProps {
 }
 
 export const MeetCard = ({ meet }: MeetCardProps) => {
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("sv-SE", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
 
   return (
     <Link href={`/meet/${meet.id}`} className="block group">
