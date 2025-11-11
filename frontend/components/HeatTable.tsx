@@ -1,10 +1,14 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import { useQuery } from "@apollo/client/react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { motion } from "framer-motion";
+import { useHeatLanes } from "@/hooks/useHeatLanes";
+import { useStopwatch } from "@/hooks/useStopwatch";
+import { getRowColor } from "@/lib/tableUtils";
+import { getLeaderTime, getRank, getDelta } from "@/lib/swimUtils";
 import { Badge } from "@/components/ui/badge";
-import { Lane, GetLanesData } from "@/types";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -13,16 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { GET_LANES } from "@/app/api/graphql/queries/laneQueries";
-import { SAVE_HEAT_RESULTS } from "@/app/api/graphql/mutations/heatMutations";
-import { GET_HEAT_RESULTS } from "@/app/api/graphql/queries/heatQueries";
-import { getRowColor } from "@/lib/tableUtils";
-import { getLeaderTime, getRank, getDelta } from "@/lib/swimUtils";
-import { useStopwatch } from "@/hooks/useStopwatch";
-import { useMutation } from "@apollo/client/react";
-import { motion } from "framer-motion";
+import { Lane } from "@/types";
 
 interface HeatTableProps {
   heatId: string;
@@ -37,48 +32,17 @@ export const HeatTable = ({
   isHeatActive,
   startTimestamp,
 }: HeatTableProps) => {
-  const [lanes, setLanes] = useState<Lane[]>([]);
+  const { lanes, loading, error, stopPolling, handleFinish } = useHeatLanes(
+    heatId,
+    isHeatActive
+  );
+
   const { elapsed, setElapsed, rafRef } = useStopwatch(
     isHeatActive,
     startTimestamp
   );
 
-  const { data, loading, error, startPolling, stopPolling } =
-    useQuery<GetLanesData>(GET_LANES, {
-      variables: { heatId },
-      fetchPolicy: "network-only",
-      notifyOnNetworkStatusChange: true,
-    });
-
-  const [saveHeatResults] = useMutation(SAVE_HEAT_RESULTS, {
-    refetchQueries: [
-      {
-        query: GET_HEAT_RESULTS,
-        variables: { heatId },
-      },
-    ],
-  });
-
-  // sync lanes
-  useEffect(() => {
-    if (data?.lanes) setLanes(data.lanes);
-  }, [data]);
-
-  // control polling
-  useEffect(() => {
-    const allFinished =
-      lanes.length > 0 && lanes.every((l) => l.status === "FINISHED");
-
-    if (isHeatActive && !allFinished) {
-      console.log("Starting polling...");
-      startPolling(1200);
-    } else {
-      console.log("Stopping polling...");
-      stopPolling();
-    }
-  }, [isHeatActive, lanes, startPolling, stopPolling]);
-
-  // stop stopwatch, stop polling and save results once all lanes are finished
+  // stop stopwatch + save results once finished
   useEffect(() => {
     if (!isHeatActive) return;
 
@@ -86,32 +50,13 @@ export const HeatTable = ({
       lanes.length > 0 && lanes.every((l) => l.status === "FINISHED");
 
     if (allFinished && rafRef.current) {
-      console.log("heat done, stopping stopwatch and polling");
-
-      // Stop animation loop
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
-
-      // Reset elapsed time
       setElapsed(0);
-
-      // Stop polling
       stopPolling();
-
-      // Save results
-      saveHeatResults({ variables: { heatId } })
-        .then(() => console.log("heat results saved"))
-        .catch((err) => console.error("Save failed: ", err));
+      handleFinish();
     }
-  }, [
-    lanes,
-    isHeatActive,
-    stopPolling,
-    saveHeatResults,
-    heatId,
-    rafRef,
-    setElapsed,
-  ]);
+  }, [lanes, isHeatActive, stopPolling, handleFinish, rafRef, setElapsed]);
 
   if (loading && lanes.length === 0)
     return <p className="text-center text-muted-foreground">Laddar banor...</p>;
@@ -137,7 +82,6 @@ export const HeatTable = ({
 
   return (
     <div className="space-y-4">
-      {/* Header with stopwatch */}
       {heatNumber && (
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-xl font-semibold text-foreground">
@@ -151,7 +95,6 @@ export const HeatTable = ({
         </div>
       )}
 
-      {/* Desktop Table */}
       <div className="hidden md:block">
         <Card className="overflow-hidden border">
           <Table>
@@ -192,9 +135,7 @@ export const HeatTable = ({
                     <TableCell className="text-center font-semibold">
                       {lane.lane}
                     </TableCell>
-                    <TableCell className="font-medium">
-                      {lane.swimmer}
-                    </TableCell>
+                    <TableCell className="font-medium">{lane.swimmer}</TableCell>
                     <TableCell className="text-muted-foreground">
                       {lane.club}
                     </TableCell>
