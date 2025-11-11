@@ -104,9 +104,9 @@ export const HeatTable = ({
   const getStatusBadge = (status: Lane["status"]) => {
     switch (status) {
       case "OFFICIAL":
-        return <Badge className="bg-sport-official text-white">Official</Badge>;
+        return <Badge variant="outline">Official</Badge>;
       case "ONGOING":
-        return <Badge className="bg-sport-ongoing text-white">Pågående</Badge>;
+        return <Badge variant="outline">Pågående</Badge>;
       case "FINISHED":
         return <Badge variant="secondary">Klar</Badge>;
       case "WAITING":
