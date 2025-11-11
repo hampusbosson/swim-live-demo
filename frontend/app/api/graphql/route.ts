@@ -8,16 +8,12 @@ import {
 } from "@/data/mockData";
 import { Meet, Heat } from "@/types";
 
-// Persist timers across invocations
+// Persist results across serverless invocations
 const globalForSim = globalThis as unknown as {
-  simulators?: Map<string, NodeJS.Timeout>;
   resultsDB?: Record<string, unknown[]>;
 };
 
-if (!globalForSim.simulators) globalForSim.simulators = new Map();
 if (!globalForSim.resultsDB) globalForSim.resultsDB = {};
-
-const simulators = globalForSim.simulators;
 const resultsDB = globalForSim.resultsDB;
 
 const typeDefs = `
@@ -76,6 +72,13 @@ const typeDefs = `
     rank: Int!
   }
 
+  input HeatResultInput {
+    lane: Int!
+    swimmer: String!
+    club: String!
+    resultTime: String!
+  }
+
   type Query {
     meets: [Meet!]!
     meet(id: ID!): Meet
@@ -93,6 +96,7 @@ const typeDefs = `
     startHeat(heatId: ID!): Boolean!
     resetHeat(heatId: ID!): Boolean!
     saveHeatResults(heatId: ID!): [HeatResult!]!
+    finishHeat(heatId: ID!, results: [HeatResultInput!]!): [HeatResult!]!
   }
 `;
 
@@ -135,14 +139,12 @@ const resolvers = {
   },
 
   Mutation: {
+    // Only sets the timestamp and resets lane state
     startHeat: (_: Heat, { heatId }: { heatId: string }) => {
-      if (simulators.has(heatId)) return true; // already running
-
       const now = Date.now();
       const heat = mockHeats.find((h) => h.id === heatId);
       if (heat) heat.startTimestamp = now;
 
-      // reset all lanes in heat
       mockLanes
         .filter((lane) => lane.heatId === heatId)
         .forEach((lane) => {
@@ -150,54 +152,11 @@ const resolvers = {
           lane.resultTime = "0.00";
         });
 
-      // assign random finish targets
-      const targets = new Map<string, number>();
-      mockLanes
-        .filter((l) => l.heatId === heatId)
-        .forEach((lane) => {
-          const seedSeconds = parseFloat(lane.seedTime);
-          const variance = (Math.random() - 0.3) * 1.5;
-          const target = Math.max(seedSeconds + variance, seedSeconds - 0.5);
-          targets.set(lane.id, target);
-        });
-
-      // simulation loop
-      const interval = setInterval(() => {
-        const active = mockLanes.filter(
-          (l) => l.heatId === heatId && l.status === "ONGOING"
-        );
-
-        if (!active.length) {
-          clearInterval(interval);
-          simulators.delete(heatId);
-          return;
-        }
-
-        active.forEach((lane) => {
-          const current = parseFloat(lane.resultTime ?? "0");
-          const target = targets.get(lane.id)!;
-          const next = current + 0.1;
-
-          if (next >= target) {
-            lane.resultTime = target.toFixed(2);
-            lane.status = "FINISHED";
-          } else {
-            lane.resultTime = next.toFixed(2);
-          }
-        });
-      }, 100);
-
-      simulators.set(heatId, interval);
       return true;
     },
 
+    // Resets everything to WAITING
     resetHeat: (_: Heat, { heatId }: { heatId: string }) => {
-      const interval = simulators.get(heatId);
-      if (interval) {
-        clearInterval(interval);
-        simulators.delete(heatId);
-      }
-
       const heat = mockHeats.find((h) => h.id === heatId);
       if (heat) heat.startTimestamp = null;
 
@@ -208,6 +167,7 @@ const resolvers = {
           l.resultTime = null;
         });
 
+      delete resultsDB[heatId];
       return true;
     },
 
@@ -215,7 +175,6 @@ const resolvers = {
       const lanes = mockLanes.filter((l) => l.heatId === heatId);
       const allFinished = lanes.every((l) => l.status === "FINISHED");
       if (!allFinished) {
-        console.warn(`Heat ${heatId} not yet finished — skipping save.`);
         return [];
       }
 
@@ -232,7 +191,42 @@ const resolvers = {
         }));
 
       resultsDB[heatId] = ranked;
-      console.log(`✅ Saved results for heat ${heatId}`);
+      console.log(`Saved results for heat ${heatId}`);
+      return ranked;
+    },
+
+    //Client-driven simulation endpoint
+    finishHeat: (
+      _: Heat,
+      {
+        heatId,
+        results,
+      }: {
+        heatId: string;
+        results: Array<{
+          lane: number;
+          swimmer: string;
+          club: string;
+          resultTime: string;
+        }>;
+      }
+    ) => {
+      const ranked = [...results]
+        .sort((a, b) => parseFloat(a.resultTime) - parseFloat(b.resultTime))
+        .map((r, i) => ({ ...r, heatId, rank: i + 1 }));
+
+      resultsDB[heatId] = ranked;
+
+      // Reflect in mockLanes
+      for (const lane of mockLanes.filter((l) => l.heatId === heatId)) {
+        const r = results.find((x) => x.lane === lane.lane);
+        if (r) {
+          lane.resultTime = r.resultTime;
+          lane.status = "FINISHED";
+        }
+      }
+
+      console.log(`Heat ${heatId} finished by client and saved.`);
       return ranked;
     },
   },

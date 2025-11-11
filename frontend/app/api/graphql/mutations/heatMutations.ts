@@ -24,3 +24,14 @@ export const SAVE_HEAT_RESULTS = gql`
   }
 `;
 
+export const FINISH_HEAT = gql`
+  mutation FinishHeat($heatId: ID!, $results: [HeatResultInput!]!) {
+    finishHeat(heatId: $heatId, results: $results) {
+      lane
+      swimmer
+      club
+      resultTime
+      rank
+    }
+  }
+`;

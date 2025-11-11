@@ -1,11 +1,9 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import { useQuery, useMutation } from "@apollo/client/react";
+import { useQuery } from "@apollo/client/react";
 import { useEffect, useState } from "react";
 import { GET_LANES } from "@/app/api/graphql/queries/laneQueries";
-import { SAVE_HEAT_RESULTS } from "@/app/api/graphql/mutations/heatMutations";
-import { GET_HEAT_RESULTS } from "@/app/api/graphql/queries/heatQueries";
 import { Lane, GetLanesData } from "@/types";
 
 export const useHeatLanes = (heatId: string, isHeatActive?: boolean) => {
@@ -18,16 +16,41 @@ export const useHeatLanes = (heatId: string, isHeatActive?: boolean) => {
       notifyOnNetworkStatusChange: true,
     });
 
-  const [saveHeatResults] = useMutation(SAVE_HEAT_RESULTS, {
-    refetchQueries: [{ query: GET_HEAT_RESULTS, variables: { heatId } }],
-  });
-
-  // sync lanes
+  //Sync lanes with server when new data arrives
   useEffect(() => {
     if (data?.lanes) setLanes(data.lanes);
   }, [data]);
 
-  // polling control
+  //Frontend-side simulation, gradually update lane times
+  useEffect(() => {
+    if (!isHeatActive) return;
+
+    const interval = setInterval(() => {
+      setLanes((prev) =>
+        prev.map((lane) => {
+          if (lane.status !== "ONGOING") return lane;
+
+          const current = parseFloat(lane.resultTime ?? "0");
+          const seed = parseFloat(lane.seedTime);
+          const target = seed + (Math.random() - 0.3); // somewhat random
+          const next = current + 0.1;
+
+          if (next >= target) {
+            return {
+              ...lane,
+              resultTime: target.toFixed(2),
+              status: "FINISHED",
+            };
+          }
+          return { ...lane, resultTime: next.toFixed(2) };
+        })
+      );
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [isHeatActive]);
+
+  // Control polling (for server sync)
   useEffect(() => {
     if (loading) return;
 
@@ -35,21 +58,11 @@ export const useHeatLanes = (heatId: string, isHeatActive?: boolean) => {
       lanes.length > 0 && lanes.every((l) => l.status === "FINISHED");
 
     if (isHeatActive && !allFinished) {
-      startPolling(1200);
+      startPolling(1500);
     } else {
       stopPolling();
     }
   }, [isHeatActive, lanes, startPolling, stopPolling, loading]);
 
-  // save results once all lanes are finished
-  const handleFinish = async () => {
-    try {
-      await saveHeatResults({ variables: { heatId } });
-      console.log("Heat results saved successfully");
-    } catch (err) {
-      console.error("Failed to save results:", err);
-    }
-  };
-
-  return { lanes, loading, error, stopPolling, handleFinish };
+  return { lanes, loading, error, stopPolling };
 };

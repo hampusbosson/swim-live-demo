@@ -9,6 +9,8 @@ import { getLeaderTime, getRank, getDelta } from "@/lib/swimUtils";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useMutation } from "@apollo/client/react";
+import { FINISH_HEAT } from "@/app/api/graphql/mutations/heatMutations";
 import {
   Table,
   TableBody,
@@ -18,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Lane } from "@/types";
+import Error from "next/error";
 
 interface HeatTableProps {
   heatId: string;
@@ -32,7 +35,7 @@ export const HeatTable = ({
   isHeatActive,
   startTimestamp,
 }: HeatTableProps) => {
-  const { lanes, loading, error, stopPolling, handleFinish } = useHeatLanes(
+  const { lanes, loading, error, stopPolling } = useHeatLanes(
     heatId,
     isHeatActive
   );
@@ -41,6 +44,8 @@ export const HeatTable = ({
     isHeatActive,
     startTimestamp
   );
+
+  const [finishHeatMutation] = useMutation(FINISH_HEAT);
 
   // stop stopwatch + save results once finished
   useEffect(() => {
@@ -54,9 +59,38 @@ export const HeatTable = ({
       rafRef.current = null;
       setElapsed(0);
       stopPolling();
-      handleFinish();
+
+      // Build the results payload to send to backend
+      const results = lanes
+        .filter((l) => l.resultTime)
+        .map((l) => ({
+          lane: l.lane,
+          swimmer: l.swimmer,
+          club: l.club,
+          resultTime: l.resultTime!,
+        }));
+
+      // Send final results to backend
+      finishHeatMutation({
+        variables: { heatId, results },
+        refetchQueries: ["GetHeatResults"], 
+      })
+        .then(() => {
+          console.log(`Heat ${heatId} results saved`);
+        })
+        .catch((err: Error) => {
+          console.error("Error saving results:", err);
+        });
     }
-  }, [lanes, isHeatActive, stopPolling, handleFinish, rafRef, setElapsed]);
+  }, [
+    lanes,
+    isHeatActive,
+    rafRef,
+    setElapsed,
+    stopPolling,
+    finishHeatMutation,
+    heatId,
+  ]);
 
   if (loading && lanes.length === 0)
     return <p className="text-center text-muted-foreground">Laddar banor...</p>;
@@ -135,7 +169,9 @@ export const HeatTable = ({
                     <TableCell className="text-center font-semibold">
                       {lane.lane}
                     </TableCell>
-                    <TableCell className="font-medium">{lane.swimmer}</TableCell>
+                    <TableCell className="font-medium">
+                      {lane.swimmer}
+                    </TableCell>
                     <TableCell className="text-muted-foreground">
                       {lane.club}
                     </TableCell>
