@@ -8,8 +8,17 @@ import {
 } from "@/data/mockData";
 import { Meet, Heat } from "@/types";
 
-const resultsDB: Record<string, unknown[]> = {}; // temp results memory
-const simulators = new Map<string, NodeJS.Timeout>(); // active timers per heat
+// Persist timers across invocations
+const globalForSim = globalThis as unknown as {
+  simulators?: Map<string, NodeJS.Timeout>;
+  resultsDB?: Record<string, unknown[]>;
+};
+
+if (!globalForSim.simulators) globalForSim.simulators = new Map();
+if (!globalForSim.resultsDB) globalForSim.resultsDB = {};
+
+const simulators = globalForSim.simulators;
+const resultsDB = globalForSim.resultsDB;
 
 const typeDefs = `
   type Meet {
