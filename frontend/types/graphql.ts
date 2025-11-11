@@ -1,6 +1,6 @@
 import { Meet, Session } from "./meet";
 import { Event } from "./event";
-import { Heat, Lane } from "./heat";
+import { Heat, Lane, HeatResult } from "./heat";
 
 export interface GetMeetsData {
   meets: Meet[];
@@ -32,4 +32,8 @@ export interface GetEventByHeatData {
 
 export interface GetHeatByIdData {
   heat: Heat;
+}
+
+export interface GetHeatResultsData {
+  heatResults: HeatResult[];
 }

@@ -19,3 +19,12 @@ export interface Lane {
   resultTime: string | null;
   status: LaneStatus;
 }
+
+export interface HeatResult {
+  heatId: string;
+  swimmer: string;
+  club: string;
+  lane: number;
+  resultTime: string;
+  rank: number;
+}
